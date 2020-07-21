@@ -171,7 +171,8 @@ def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=60
             else:  # it's not possible, because flows only include TCP and UDP flows
                 pass
 
-        if not split_flow:  # if the current flow is not split by TIMEOUT, then add it into subflows
+        # if the current flow is not split by TIMEOUT, then add it into subflows
+        if not split_flow:
             subflows.append([fid, subflow_tmp])
         else:
             # discard the last subflow_tmp
@@ -224,7 +225,7 @@ def _flows2subflows(flows, interval=10, *, flow_pkts_thres=2, verbose=1):
         pkts = sorted(pkts, key=_get_frame_time, reverse=False)
 
         subflows = []
-        # split flows by TIMEOUT
+        # split flows by interval
         for j, pkt in enumerate(pkts):
             pkt_time = _get_frame_time(pkt)
             if j == 0:
@@ -258,7 +259,8 @@ def _flows2subflows(flows, interval=10, *, flow_pkts_thres=2, verbose=1):
             else:  # it's not possible, because flows only include TCP and UDP flows
                 pass
 
-        if not split_flow:  # if the current flow is not split by TIMEOUT, then add it into subflows
+        # if the current flow is not split by interval, then add it into subflows
+        if not split_flow:
             subflows.append([fid, subflow_tmp])
         else:
             # discard the last subflow_tmp

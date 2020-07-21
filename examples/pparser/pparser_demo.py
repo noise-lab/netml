@@ -5,6 +5,7 @@
 #
 # License: xxx
 import os
+
 from pparser.parser import PCAP
 from utils.tool import dump_data
 

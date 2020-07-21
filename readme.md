@@ -1,4 +1,4 @@
-### A python library is created for network novelty detection, which mainly includes two submodules: pcap parpser ('pparser') and novelty detection models ('ndm'). 'pparser' is for parsing pcaps to flow features by [Scapy](https://scapy.net/) , while 'ndm' is for detecting novelties by different models, such as OCSVM.
+### A python library, "Outlier Detection (odet)",  is created for network novelty detection, which mainly includes two submodules: pcap parpser ('pparser') and novelty detection models ('ndm'). 'pparser' is for parsing pcaps to flow features by [Scapy](https://scapy.net/) , while 'ndm' is for detecting novelties by different models, such as OCSVM.
 
 # Architecture:
     - docs/: 
