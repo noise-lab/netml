@@ -24,7 +24,9 @@ def main():
     pp.label_flows(label_file=label_file)
 
     # extract features from each flow given feat_type
+    # feat_type in ['IAT', 'SIZE', 'STATS', 'SAMP_NUM', 'SAMP_SIZE']
     feat_type = 'IAT'
+    print(f'feat_type: {feat_type}')
     pp.flow2features(feat_type, fft=False, header=False)
 
     # dump data to disk

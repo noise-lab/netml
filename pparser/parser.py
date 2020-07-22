@@ -412,7 +412,8 @@ def _get_IAT_SIZE(flows):
 
 
 def _get_STATS(flows):
-    """get basic stats features, which includes duration, pkts_rate, bytes_rate, mean, median, std, q1, q2, q3, min, and max.
+    """get basic stats features, which includes duration, pkts_rate, bytes_rate, mean,
+    median, std, q1, q2, q3, min, and max.
 
     Parameters
     ----------
@@ -448,6 +449,152 @@ def _get_STATS(flows):
         features.append(base_features)
 
         fids.append(fid)
+
+    return features, fids
+
+
+def _get_SAMP(flows, sampling_feature='SAMP_NUM', sampling_rate=0.1, verbose=1):
+    """Extract sampling IATs from subwindows obtained by splitting each flow.
+
+    For example, sampling_feature = 'SAMP_NUM'
+        The length in time of the sub window is what we’re calling sampling rate.
+           features obtained on sampling_rate = 0.1 means that:
+            1) split each flow into small windows, each window has 0.1 duration (the length in time of each small window)
+            2) obtain the number of packets from each window (0.1s).
+            3) all the values obtained form each window make up of the features (SAMP_NUM).
+
+    Parameters
+    ----------
+    flows: list
+        all flows.
+
+    sampling_feature: str
+        'SAMP_NUM' or 'SAMP_SIZE'
+        the feature we wants to extract from each flow.
+
+    sampling_rate: float
+        the duration of the window
+
+    Returns
+    -------
+
+    features: a list
+       SAMP features
+
+    fids: a list
+        each value is five-tuple
+
+    """
+    features = []
+    fids = []
+    for fid, pkts in flows:
+        # for each flow
+        each_flow_features = []
+        pkt_times = [_get_frame_time(pkt) for pkt in pkts]
+        pkt_sizes = [len(pkt) for pkt in pkts]
+        samp_sub = -1
+        for i in range(len(pkts)):
+            if i == 0:
+                current = pkt_times[0]
+                if sampling_feature == 'SAMP_NUM':
+                    samp_sub = 1
+                elif sampling_feature == 'SAMP_SIZE':
+                    samp_sub = pkt_sizes[0]
+                continue
+            if pkt_times[i] - current <= sampling_rate:  # interval
+                if sampling_feature == 'SAMP_NUM':
+                    samp_sub += 1
+                elif sampling_feature == 'SAMP_SIZE':
+                    samp_sub += pkt_sizes[i]
+                else:
+                    print(f'{sampling_feature} is not implemented yet')
+            else:  # if times[i]-current > sampling_rate:    # interval
+                current += sampling_rate
+                each_flow_features.append(samp_sub)
+                # the time diff between times[i] and times[i-1] will be larger than mutli-samplings
+                # for example, times[i]=10.0s, times[i-1]=2.0s, sampling=0.1,
+                # for this case, we should insert int((10.0-2.0)//0.1) * [0]
+                num_intervals = int(np.floor((pkt_times[i] - current) // sampling_rate))
+                if num_intervals > 0:
+                    num_intervals = min(num_intervals, 500)
+                    each_flow_features.extend([0] * num_intervals)
+                    current += num_intervals * sampling_rate
+                if len(each_flow_features) > 500:  # avoid num_features too large to excess the memory.
+                    # return fid, each_flow_features[:500]
+                    samp_sub = -1
+                    each_flow_features = each_flow_features[:500]
+                    break
+
+                if sampling_feature == 'SAMP_NUM':
+                    samp_sub = 1
+                elif sampling_feature == 'SAMP_SIZE':
+                    samp_sub = pkt_sizes[i]
+
+        if samp_sub > 0:  # handle the last sub period in the flow.
+            each_flow_features.append(samp_sub)
+
+        features.append(each_flow_features)
+        fids.append(fid)
+
+    # if verbose:
+    #     show_len = 10  # only show the first 20 difference
+    #     samp_lens = np.asarray([len(samp_features) for samp_features in features])[:show_len]
+
+    return features, fids
+
+
+def _get_SAMP_NUM(flows, sampling_rate=1):
+    """Extract sampling the number of packets from subwindows obtained by splitting each flow.
+
+     The length in time of the sub window is what we’re calling sampling rate.
+        features obtained on sampling_rate = 0.1 means that:
+         1) split each flow into small windows, each window has 0.1 duration (the length in time of each small window)
+         2) obtain the number of packets from each window (0.1s).
+         3) all values obtained from each window make up of the features (SAMP_NUM).
+
+    Parameters
+    ----------
+        flows: list
+
+        sampling_rate: float
+           the duration of subwindow (interval)
+    Returns
+    -------
+    features: a list
+        sizes
+    fids: a list
+        each value is five-tuple
+    """
+
+    features, fids = _get_SAMP(flows, sampling_feature='SAMP_NUM', sampling_rate=sampling_rate)
+
+    return features, fids
+
+
+def _get_SAMP_SIZE(flows, sampling_rate=1):
+    """Extract sampling total sizes of packets from each subwindow after splitting each flow.
+
+     The length in time of the subwindow is what we’re calling sampling rate.
+        features obtained on sampling_rate = 0.1 means that:
+         1) split each flow into small windows, each window has 0.1 duration (the length in time of each small window)
+         2) obtain the total size of packets in each window (0.1s).
+         3) all the values obtained from each window make up of the features (SAMP_SIZE).
+
+    Parameters
+    ----------
+        flows:list
+
+        sampling_rate: float
+           the duration of subwindow (interval)
+
+    Returns
+    -------
+    features: a list
+        sizes
+    fids: a list
+        each value is five-tuple
+    """
+    features, fids = _get_SAMP(flows, sampling_feature='SAMP_SIZE', sampling_rate=sampling_rate)
 
     return features, fids
 
@@ -617,10 +764,10 @@ class PCAP:
         dim = int(np.floor(np.quantile(num_pkts, self.q_interval)))  # use the same q_interval to get the dimension
 
         if feat_type in ['IAT', 'FFT-IAT']:
-            self.dim = dim
+            self.dim = dim - 1
             self.features, self.fids = _get_IAT(self.flows)
         elif feat_type in ['SIZE', 'FFT-SIZE']:
-            self.dim = dim - 1
+            self.dim = dim
             self.features, self.fids = _get_SIZE(self.flows)
         elif feat_type in ['IAT_SIZE', 'FFT-IAT_SIZE']:
             self.dim = 2 * dim - 1
@@ -628,6 +775,17 @@ class PCAP:
         elif feat_type in ['STATS']:
             self.dim = 10
             self.features, self.fids = _get_STATS(self.flows)
+        elif feat_type in ['SAMP_NUM', 'FFT-SAMP_NUM']:
+            self.dim = dim - 1
+            flow_durations = [_get_flow_duration(pkts) for fid, pkts in self.flows]
+            # To obtain different samp_features, you should change q_interval ((0, 1))
+            sampling_rate = _get_split_interval(flow_durations, q_interval=0.3)
+            self.features, self.fids = _get_SAMP_NUM(self.flows, sampling_rate)
+        elif feat_type in ['SAMP_SIZE', 'FFT-SAMP_SIZE']:
+            self.dim = dim - 1  # here the dim of "SAMP_SIZE" is dim -1, which equals to the dimension of 'SAMP_NUM'
+            flow_durations = [_get_flow_duration(pkts) for fid, pkts in self.flows]
+            sampling_rate = _get_split_interval(flow_durations, q_interval=0.3)
+            self.features, self.fids = _get_SAMP_SIZE(self.flows, sampling_rate)
         else:
             msg = f'feat_type ({feat_type}) is not correct! '
             raise ValueError(msg)
@@ -763,4 +921,3 @@ class PCAP:
         """
         _, tot_time = self._label_flows(label_file, label)
         self.label_flows.__dict__['tot_time'] = tot_time
-
