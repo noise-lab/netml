@@ -1,17 +1,19 @@
 """A demo for detecting novelty with a model learned from given data.
 
 """
-# Authors: kun.bj@outlook.com
-#
-# License: xxx
-import os
+import pathlib
 
 from sklearn.model_selection import train_test_split
 
 from ndm.model import MODEL
 from utils.tool import dump_data, load_data
 
+
 RANDOM_STATE = 42
+
+EXAMPLES_PATH = pathlib.Path(__file__).parent.parent
+
+DATA_FILE = EXAMPLES_PATH / 'out' / 'data' / 'demo_IAT.dat'
 
 
 def generate_model(model_name='GMM'):
@@ -56,9 +58,8 @@ def generate_model(model_name='GMM'):
     return model
 
 
-def main():
+def main(data_file=DATA_FILE):
     # load data
-    data_file = 'out/data/demo_IAT.dat'
     X, y = load_data(data_file)
     # split train and test test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=RANDOM_STATE)
@@ -80,8 +81,8 @@ def main():
     ndm.test(X_test, y_test)
 
     # dump data to disk
-    out_dir = os.path.dirname(data_file)
-    dump_data((model, ndm.history), out_file=f'{out_dir}/{ndm.model_name}-results.dat')
+    out_file = data_file.parent / f'{ndm.model_name}-results.dat'
+    dump_data((model, ndm.history), out_file=out_file)
 
     print(ndm.train.tot_time, ndm.test.tot_time, ndm.score)
 

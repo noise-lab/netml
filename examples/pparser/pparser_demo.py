@@ -1,27 +1,36 @@
 """A demo for parsing pcap and labelling the extracted flows.
 
 """
-# Authors: kun.bj@outlook.com
-#
-# License: xxx
-import os
+import pathlib
 
 from pparser.parser import PCAP
 from utils.tool import dump_data
 
+
 RANDOM_STATE = 42
 
+EXAMPLES_PATH = pathlib.Path(__file__).parent.parent
 
-def main():
-    pcap_file = 'data/demo.pcap'
-    pp = PCAP(pcap_file, flow_ptks_thres=2, verbose=10, random_state=RANDOM_STATE)
+OUT_PATH = EXAMPLES_PATH / 'out'
+
+PCAP_FILE = EXAMPLES_PATH / 'data' / 'demo.pcap'
+
+LABEL_FILE = EXAMPLES_PATH / 'data'/ 'demo.csv'
+
+
+def main(pcap_file=PCAP_FILE, label_file=LABEL_FILE):
+    pp = PCAP(
+        str(pcap_file),    # scapy doesn't appear to support Path
+        flow_ptks_thres=2,
+        verbose=10,
+        random_state=RANDOM_STATE,
+    )
 
     # extract flows from pcap
     pp.pcap2flows(q_interval=0.9)
 
     # label each flow with a label
-    label_file = 'data/demo.csv'
-    pp.label_flows(label_file=label_file)
+    pp.label_flows(label_file=str(label_file))
 
     # extract features from each flow given feat_type
     # feat_type in ['IAT', 'SIZE', 'STATS', 'SAMP_NUM', 'SAMP_SIZE']
@@ -31,8 +40,11 @@ def main():
 
     # dump data to disk
     X, y = pp.features, pp.labels
-    out_dir = os.path.join('out', os.path.dirname(pcap_file))
-    dump_data((X, y), out_file=f'{out_dir}/demo_{feat_type}.dat')
+    out_dir =  pathlib.Path(pcap_file).parent
+    if not out_dir.is_absolute():
+        out_dir = OUT_PATH / out_dir.name
+    out_file = out_dir / f'demo_{feat_type}.dat'
+    dump_data((X, y), out_file=out_file)
 
     print(pp.features.shape, pp.pcap2flows.tot_time, pp.flow2features.tot_time)
 
