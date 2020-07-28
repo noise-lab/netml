@@ -7,8 +7,7 @@ Due to scikit-learn, pip is required:
 """
 import pathlib
 
-from setuptools import find_packages
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 README_PATH = pathlib.Path(__file__).parent / 'readme.md'
@@ -53,6 +52,6 @@ setup(name='odet',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
           'Topic :: System :: Networking :: Monitoring',
       ],
-      # automatically find the packages with __init__.py file and start from the setup.py's directory
-      packages=find_packages(),
+      packages=find_packages('src'),
+      package_dir={'': 'src'},
 )
