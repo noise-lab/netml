@@ -5,8 +5,8 @@ import pathlib
 
 from sklearn.model_selection import train_test_split
 
-from ndm.model import MODEL
-from utils.tool import dump_data, load_data
+from odet.ndm.model import MODEL
+from odet.utils.tool import dump_data, load_data
 
 
 RANDOM_STATE = 42
@@ -32,22 +32,22 @@ def generate_model(model_name='GMM'):
     """
 
     if model_name == 'OCSVM':
-        from ndm.ocsvm import OCSVM
+        from odet.ndm.ocsvm import OCSVM
         model = OCSVM(kernel='rbf', nu=0.5, random_state=RANDOM_STATE)
     elif model_name == 'GMM':
-        from ndm.gmm import GMM
+        from odet.ndm.gmm import GMM
         model = GMM(n_components=2, covariance_type='full', random_state=RANDOM_STATE)
     elif model_name == 'IF':
-        from ndm.iforest import IF
+        from odet.ndm.iforest import IF
         model = IF(n_estimators=100, random_state=RANDOM_STATE)
     elif model_name == 'PCA':
-        from ndm.pca import PCA
+        from odet.ndm.pca import PCA
         model = PCA(n_components=1, random_state=RANDOM_STATE)
     elif model_name == 'KDE':
-        from ndm.kde import KDE
+        from odet.ndm.kde import KDE
         model = KDE(kernel='gaussian', bandwidth=1.0, random_state=RANDOM_STATE)
     elif model_name == 'AE':
-        from ndm.ae import AE
+        from odet.ndm.ae import AE
         model = AE(epochs=100, batch_size=32, random_state=RANDOM_STATE)
     else:
         msg = f'{model_name} is not implemented yet!'

@@ -25,8 +25,8 @@ From a repository clone:
 ```python3
 import os
 
-from pparser.parser import PCAP
-from utils.tool import dump_data
+from odet.pparser.parser import PCAP
+from odet.utils.tool import dump_data
 
 RANDOM_STATE = 42
 
@@ -59,9 +59,9 @@ import os
 
 from sklearn.model_selection import train_test_split
 
-from ndm.model import MODEL
-from ndm.ocsvm import OCSVM
-from utils.tool import dump_data, load_data
+from odet.ndm.model import MODEL
+from odet.ndm.ocsvm import OCSVM
+from odet.utils.tool import dump_data, load_data
 
 RANDOM_STATE = 42
 

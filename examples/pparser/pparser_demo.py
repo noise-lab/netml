@@ -3,8 +3,8 @@
 """
 import pathlib
 
-from pparser.parser import PCAP
-from utils.tool import dump_data
+from odet.pparser.parser import PCAP
+from odet.utils.tool import dump_data
 
 
 RANDOM_STATE = 42
