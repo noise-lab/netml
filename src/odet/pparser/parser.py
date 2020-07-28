@@ -14,7 +14,7 @@ from scapy.all import *
 from scapy.layers.inet import IP, TCP, UDP
 from sklearn.utils import shuffle
 
-from utils.tool import data_info, timing
+from odet.utils.tool import data_info, timing
 
 
 def _get_fid(pkt):
