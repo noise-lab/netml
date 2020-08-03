@@ -20,6 +20,13 @@ INSTALL_REQUIRES = (
 )
 
 EXTRAS_REQUIRE = {
+    'dev': (
+        'argcmdr==0.6.0',
+        'bumpversion==0.6.0',
+        'twine==3.2.0',
+        'wheel==0.34.2',
+    ),
+
     # (as yet) unused:
     # 'visualize': ['matplotlib==3.2.1'],
     # 'tests': ['pytest==5.3.1', 'requests==2.22.0'],
