@@ -114,7 +114,6 @@ For more examples, please check the 'examples' directory.
 - readme.md
 - requirements.txt
 - setup.py
-- version.txt
 
 
 ## To Do
