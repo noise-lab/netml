@@ -26,7 +26,7 @@ From a repository clone:
 import os
 
 from pparser.parser import PCAP
-from utils import dump_data
+from utils.tool import dump_data
 
 RANDOM_STATE = 42
 
