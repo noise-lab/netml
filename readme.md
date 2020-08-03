@@ -1,8 +1,8 @@
-# odet
+# netml
 
-"Outlier Detection" (odet) is a Python library for network anomaly detection.
+`netml` is a network anomaly detection library written in Python.
 
-`odet` contains two primary submodules:
+This library contains two primary submodules:
 
 * pcap parser: `pparser`\
 `pparser` is for parsing pcaps to flow features, using [Scapy](https://scapy.net/).
@@ -25,8 +25,8 @@ From a repository clone:
 ```python3
 import os
 
-from odet.pparser.parser import PCAP
-from odet.utils.tool import dump_data
+from netml.pparser.parser import PCAP
+from netml.utils.tool import dump_data
 
 RANDOM_STATE = 42
 
@@ -59,9 +59,9 @@ import os
 
 from sklearn.model_selection import train_test_split
 
-from odet.ndm.model import MODEL
-from odet.ndm.ocsvm import OCSVM
-from odet.utils.tool import dump_data, load_data
+from netml.ndm.model import MODEL
+from netml.ndm.ocsvm import OCSVM
+from netml.utils.tool import dump_data, load_data
 
 RANDOM_STATE = 42
 
@@ -129,3 +129,8 @@ The current version just implements basic functions. We still need to further ev
 - Generated docs from docs-string automatically
 
 Welcome to make any comments to make it more robust and easier to use!
+
+
+## Thanks
+
+`netml` is based on the initial work of ["Outlier Detection" library `odet`](https://github.com/Learn-Live/odet) 🙌

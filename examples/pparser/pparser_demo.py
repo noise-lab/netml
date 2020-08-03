@@ -3,8 +3,8 @@
 """
 import pathlib
 
-from odet.pparser.parser import PCAP
-from odet.utils.tool import dump_data
+from netml.pparser.parser import PCAP
+from netml.utils.tool import dump_data
 
 
 RANDOM_STATE = 42
