@@ -34,7 +34,7 @@ EXTRAS_REQUIRE = {
 
 
 setup(name='netml',
-      version='0.0.1',
+      version='0.0.2',
       description='Network anomaly detection via machine learning',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
