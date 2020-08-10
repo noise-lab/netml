@@ -20,22 +20,26 @@ INSTALL_REQUIRES = (
 )
 
 EXTRAS_REQUIRE = {
+    'dev': (
+        'argcmdr==0.6.0',
+        'bumpversion==0.6.0',
+        'twine==3.2.0',
+        'wheel==0.34.2',
+    ),
+
     # (as yet) unused:
     # 'visualize': ['matplotlib==3.2.1'],
     # 'tests': ['pytest==5.3.1', 'requests==2.22.0'],
 }
 
 
-setup(name='odet',
+setup(name='netml',
       version='0.0.1',
-      description='Novelty Detection',
+      description='Network anomaly detection via machine learning',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
-      author='Kun',
-      author_email='kun.bj@outlook.com',
-      url='https://github.com/Learn-Live/odet',
-      download_url='https://github.com/Learn-Live/odet',
-      license='xxx',
+      url='https://github.com/chicago-cdac/netml',
+      # license='xxx',  # FIXME
       python_requires='>=3.7.3,<4',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
@@ -48,7 +52,7 @@ setup(name='odet',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
           'Topic :: Software Development :: Libraries',
-          'Topic :: Software Development :: Libraries :: Python Modules'
+          'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
           'Topic :: System :: Networking :: Monitoring',
       ],

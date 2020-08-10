@@ -1,8 +1,8 @@
-# odet
+# netml
 
-"Outlier Detection" (odet) is a Python library for network anomaly detection.
+`netml` is a network anomaly detection library written in Python.
 
-`odet` contains two primary submodules:
+This library contains two primary submodules:
 
 * pcap parser: `pparser`\
 `pparser` is for parsing pcaps to flow features, using [Scapy](https://scapy.net/).
@@ -13,7 +13,11 @@
     
 ## Installation
 
-From a repository clone:
+`netml` is available on PyPI:
+
+    pip install netml
+
+Or, from a repository clone:
 
     pip install .
 
@@ -25,8 +29,8 @@ From a repository clone:
 ```python3
 import os
 
-from odet.pparser.parser import PCAP
-from odet.utils.tool import dump_data
+from netml.pparser.parser import PCAP
+from netml.utils.tool import dump_data
 
 RANDOM_STATE = 42
 
@@ -59,9 +63,9 @@ import os
 
 from sklearn.model_selection import train_test_split
 
-from odet.ndm.model import MODEL
-from odet.ndm.ocsvm import OCSVM
-from odet.utils.tool import dump_data, load_data
+from netml.ndm.model import MODEL
+from netml.ndm.ocsvm import OCSVM
+from netml.utils.tool import dump_data, load_data
 
 RANDOM_STATE = 42
 
@@ -89,7 +93,7 @@ dump_data((model, ndm.history), out_file=f'{out_dir}/{ndm.model_name}-results.da
 print(ndm.train.tot_time, ndm.test.tot_time, ndm.score)
 ```
 
-For more examples, please check the 'examples' directory.
+For more examples, see the `examples/` directory in the source repository.
 
 
 ## Architecture
@@ -114,7 +118,6 @@ For more examples, please check the 'examples' directory.
 - readme.md
 - requirements.txt
 - setup.py
-- version.txt
 
 
 ## To Do
@@ -122,10 +125,27 @@ For more examples, please check the 'examples' directory.
 The current version just implements basic functions. We still need to further evaluate and optimize them continually. 
 
 - Evaluate 'pparser' performance on different pcaps
-- Add setup.py for 'install'
 - Add 'test' cases
 - Add license
 - Add more examples
 - Generated docs from docs-string automatically
 
 Welcome to make any comments to make it more robust and easier to use!
+
+
+## Development
+
+Development dependencies may be installed via the `dev` extras (below assuming a source checkout):
+
+    pip install --editable .[dev]
+
+(Note: the installation flag `--editable` is also used above to instruct `pip` to place the source checkout directory itself onto the Python path, to ensure that any changes to the source are reflected in Python imports.)
+
+Development tasks are then managed via [`argcmdr`](https://github.com/dssg/argcmdr) sub-commands of `manage …`, (as defined by the repository module `manage.py`), _e.g._:
+
+    manage bump patch -m "initial release of netml" --build --release
+
+
+## Thanks
+
+`netml` is based on the initial work of the ["Outlier Detection" library `odet`](https://github.com/Learn-Live/odet) 🙌

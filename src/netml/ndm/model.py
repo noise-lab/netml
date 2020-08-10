@@ -8,7 +8,7 @@
 from sklearn import metrics
 from sklearn.metrics import roc_curve
 
-from odet.utils.tool import timing
+from netml.utils.tool import timing
 
 
 class MODEL:
