@@ -834,14 +834,14 @@ class PCAP:
         self.flow2features.__dict__['tot_time'] = tot_time
 
     @timing
-    def _label_flows(self, label_file='', label=0):
+    def _label_flows(self, label_file=None, label=0):
         """label each flow by label_file (only for CICIDS_2017 label_file) or label.
         If you want to parse other label file, you have to override "label_flows()" with your own one.
         (normal=0,and abnormal = 1)
 
         Parameters
         ----------
-        label_file: str
+        label_file: str (path) or file
             a file that includes flow labels
 
         label: int
@@ -852,7 +852,7 @@ class PCAP:
         self
         """
 
-        if len(label_file) > 0:
+        if label_file:
             NORMAL_LABELS = [v.upper() for v in ['benign'.upper(), 'normal'.upper()]]
 
             # load CSV with pandas
@@ -909,7 +909,7 @@ class PCAP:
 
         Parameters
         ----------
-        label_file: str
+        label_file: str (path) or file
             a file that includes flow labels
 
         label: int
