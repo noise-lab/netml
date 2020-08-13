@@ -14,16 +14,17 @@ from datetime import datetime
 import pandas as pd
 
 
-def dump_data(data, out_file='', verbose=True):
-    """Save data to file
+def dump_data(data, out_file, verbose=True):
+    """Save data to pickle file
 
     Parameters
     ----------
     data: any data
 
-    out_file: str
-        out file path
-    verbose: int (default is 1)
+    out_file: str (path) or file
+        out file
+
+    verbose: bool (default True)
         a print level is to control what information should be printed according to the given value.
         The higher the value is, the more info is printed.
 
@@ -31,31 +32,51 @@ def dump_data(data, out_file='', verbose=True):
     -------
 
     """
+    # won't close descriptor we don't open
+    try:
+        out_desc = None  # avoid UnboundLocalError in finally
 
-    check_path(out_file, overwrite=verbose)
+        if hasattr(out_file, 'write'):
+            out_desc = out_file
+        elif out_file:
+            # FIXME: overwrite=verbose?
+            check_path(out_file, overwrite=verbose)
+            out_desc = open(out_file, 'wb')
+        else:
+            raise TypeError("out_file argument required")
 
-    # save results
-    with open(out_file, 'wb') as out_hdl:
-        pickle.dump(data, out_hdl)
+        pickle.dump(data, out_desc)
+    finally:
+        if out_desc is not None and out_desc is not out_file:
+            # it's ours to manage
+            out_desc.close()
 
 
 def load_data(in_file):
-    """load data from file
+    """load data from pickle file
 
     Parameters
     ----------
-    in_file: str
-        input file path
+    in_file: str (path) or file
+        input file
 
     Returns
     -------
-    data:
-        loaded data
-    """
-    with open(in_file, 'rb') as f:
-        data = pickle.load(f)
+    loaded data structure
 
-    return data
+    """
+    try:
+        in_desc = None  # avoid UnboundLocalError in finally
+
+        if hasattr(in_file, 'read'):
+            in_desc = in_file
+        else:
+            in_desc = open(in_file, 'rb')
+
+        return pickle.load(in_desc)
+    finally:
+        if in_desc is not None and in_desc is not in_file:
+            in_desc.close()
 
 
 def data_info(data=None, name='data'):

@@ -12,20 +12,23 @@ from setuptools import find_packages, setup
 
 README_PATH = pathlib.Path(__file__).parent / 'readme.md'
 
-INSTALL_REQUIRES = (
+INSTALL_REQUIRES = [
     'numpy==1.18.3',
     'pandas==0.25.1',
     'scapy==2.4.3',
     'scikit-learn==0.23.1',
-)
+]
+
+_CLI_REQUIRES = ['argcmdr==0.6.0']
 
 EXTRAS_REQUIRE = {
-    'dev': (
-        'argcmdr==0.6.0',
+    'cli': _CLI_REQUIRES,
+
+    'dev': _CLI_REQUIRES + [
         'bumpversion==0.6.0',
         'twine==3.2.0',
         'wheel==0.34.2',
-    ),
+    ],
 
     # (as yet) unused:
     # 'visualize': ['matplotlib==3.2.1'],
@@ -58,4 +61,7 @@ setup(name='netml',
       ],
       packages=find_packages('src'),
       package_dir={'': 'src'},
+      entry_points={
+          'console_scripts': ['netml=netml.cli:execute [cli]'],
+      },
 )
