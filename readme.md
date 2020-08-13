@@ -196,7 +196,9 @@ Development dependencies may be installed via the `dev` extras (below assuming a
 
 Development tasks are then managed via [`argcmdr`](https://github.com/dssg/argcmdr) sub-commands of `manage …`, (as defined by the repository module `manage.py`), _e.g._:
 
-    manage bump patch -m "initial release of netml" --build --release
+    manage version patch -m "initial release of netml" \
+           --build                                     \
+           --release
 
 
 ## Thanks

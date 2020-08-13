@@ -10,7 +10,7 @@ class Manage(LocalRoot):
 
 
 @Manage.register
-class Bump(Local):
+class Version(Local):
     """bump package version (and optionally build and release)"""
 
     bump_default_message = "Bump version: {current_version} → {new_version}"
@@ -86,6 +86,17 @@ class Build(Local):
 @Manage.register
 class Release(Local):
     """upload package(s) to pypi"""
+
+    # TODO: add support for upload to test.pypi.org
+    # (See also: https://github.com/bast/pypi-howto)
+    #
+    # NOTE: also, could set up a Github workflow that automatically builds for
+    # us, (triggered by say a tag or *maybe* even a push); perhaps stores that
+    # artifact in Github Packages; and even uploads it to PyPI, or at least to
+    # test.pypi.org.
+    # (This might be convenient. It also might alleviate set-up work -- and any
+    # concerns -- over credentials sharing.)
+    # (See also: https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 
     def __init__(self, parser):
         parser.add_argument(
