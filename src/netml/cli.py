@@ -30,14 +30,19 @@ def execute():
     argcmdr.main(Main)
 
 
-class Main(argcmdr.Command):
+class Main(argcmdr.RootCommand):
     """detect novel or anomalous network activity from packet captures"""
+
+
+@Main.register
+class Learn(argcmdr.Command):
+    """train & test anomaly-detection models"""
 
     FEATURE_SPOOL_MAX_SIZE = 50 * 1024 ** 2  # 50 MB
 
     action_extract = 'extract'
-    action_analyze = 'analyze'
-    actions = (action_extract, action_analyze)
+    action_train = 'train'
+    actions = (action_extract, action_train)
 
     def __init__(self, parser):
         # input/output paths
@@ -46,6 +51,9 @@ class Main(argcmdr.Command):
             type=argparse.FileType('rb'),
             help=f'path to packet capture (pcap) file (required to "{self.action_extract}")',
         )
+        # TODO: support specification of "normal" & "abnormal" pcap(s) in lieu of a
+        # TODO: separate label file (as allowed for elsewhere in library)
+        # (could perhaps have argparse handle entirety of this flag set logic)
         parser.add_argument(
             '-l', '--label',
             type=argparse.FileType('r'),
@@ -55,13 +63,13 @@ class Main(argcmdr.Command):
             '-f', '--feature',
             type=argparse.FileType('w+b'),
             help=f"path at which extracted features are stored "
-                 f'(required to "{self.action_extract}" OR "{self.action_analyze}" *in isolation*)',
+                 f'(required to "{self.action_extract}" OR "{self.action_train}" *in isolation*)',
         )
         parser.add_argument(
             '-o', '--output',
             type=argparse.FileType('wb'),
             help="path at which to store analysis results "
-                 f'(required to "{self.action_analyze}")',
+                 f'(required to "{self.action_train}")',
         )
 
         # specify step (optionally)
@@ -82,10 +90,10 @@ class Main(argcmdr.Command):
 
         if actions != self.actions and not args.feature:
             parser.error(f'the following arguments are required to "{self.action_extract}" or '
-                         f'"{self.action_analyze}" in isolation: -f/--feature')
+                         f'"{self.action_train}" in isolation: -f/--feature')
 
-        if self.action_analyze in actions and not args.output:
-            parser.error(f'the following arguments are required to "{self.action_analyze}": '
+        if self.action_train in actions and not args.output:
+            parser.error(f'the following arguments are required to "{self.action_train}": '
                          f'-o/--output')
 
         # dynamic argument defaults
@@ -102,8 +110,8 @@ class Main(argcmdr.Command):
                 feature_descriptor,
             )
 
-        if self.action_analyze in actions:
-            self.analyze(
+        if self.action_train in actions:
+            self.train(
                 feature_descriptor,
                 args.output,
             )
@@ -137,11 +145,14 @@ class Main(argcmdr.Command):
         feature.seek(0)
 
     @staticmethod
-    def analyze(feature, output):
+    def train(feature, output):
         # FIXME: demo
         (X, y) = load_data(feature)
 
         # split train and test test
+        #
+        # TODO: might make sense to split testing into a separate "action," such that
+        # TODO: it's done by default, but also can be applied modularly (on its own)
         (
             X_train,
             X_test,
