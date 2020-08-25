@@ -17,7 +17,7 @@ The tool's command-line interface is documented by its built-in help flags `-h` 
 
 ## Installation
 
-`netml` is available on PyPI:
+`netml` is available on [PyPI](https://pypi.org/project/netml/):
 
     pip install netml
 
