@@ -33,8 +33,8 @@ def _get_fid(pkt):
     elif IP in pkt and UDP in pkt:
         flow_type = 'UDP'
         fid = (pkt[IP].src, pkt[IP].dst, pkt[UDP].sport, pkt[UDP].dport, 17)
-    else:
-        fid = 'other'
+    else:  # others
+        fid = ('', '', -1, -1, -1)
 
     return fid
 
@@ -150,11 +150,12 @@ def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=60
                 subflow_tmp = [pkt]
                 split_flow = False  # if a flow is not split with interval, label it as False, otherwise, True
                 continue
-
+            # print(fid, pkt)
             if (6 in fid) or (TCP in pkt):
                 # handle TCP packets, TCP is 6
                 # a timeout (the idle time) is the duration between the previous pkt and the current one.
                 if pkt_time - _get_frame_time(subflow_tmp[-1]) > tcp_timeout:
+                    # Note: here subflow_tmp will only have 1 packet
                     subflows.append((fid, subflow_tmp))
                     subflow_tmp = [pkt]  # create a new subflow and store the current packet as the first packet of it.
                     split_flow = True
@@ -163,6 +164,11 @@ def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=60
             elif (17 in fid) or UDP in pkt:
                 # handle UDP packets, UDP is 17
                 if pkt_time - _get_frame_time(subflow_tmp[-1]) > udp_timeout:
+                    # print(fid, len(subflow_tmp))
+                    # Note: here subflow_tmp will only have 1 packet
+                    # E.g., without timeout splitting, the flow has two packets, pkt1 (time=2020-08-06 11:01:20.029699)
+                    # and pkt2 (time=2020-08-07 01:01:20.376141), so after timeout splitting, subflow_tmp = [pkt1]
+                    # (only one packet)
                     subflows.append((fid, subflow_tmp))
                     subflow_tmp = [pkt]
                     split_flow = True
@@ -173,19 +179,21 @@ def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=60
 
         # if the current flow is not split by TIMEOUT, then add it into subflows
         if not split_flow:
-            subflows.append([fid, subflow_tmp])
+            subflows.append((fid, subflow_tmp))
         else:
             # discard the last subflow_tmp
             pass
 
         new_flows.extend(subflows)
 
+    new_flows = [(fid, pkts) for (fid, pkts) in new_flows if len(pkts) >= flow_pkts_thres]
     if verbose > 3:
         n_lt_2 = len([len(pkts) for fid, pkts in flows.items() if len(pkts) < flow_pkts_thres])
         n_gt_2 = len([len(pkts) for fid, pkts in flows.items() if len(pkts) >= flow_pkts_thres])
         print(f'total number of flows: {len(flows.keys())}. Num of flows < {flow_pkts_thres} pkts: {n_lt_2}, '
-              f'and >={flow_pkts_thres} pkts: {n_gt_2}')
-        print(f'kept flows: {len(new_flows)}. Each of them has at least {flow_pkts_thres} pkts')
+              f'and >={flow_pkts_thres} pkts: {n_gt_2} without timeout splitting.')
+        print(
+            f'kept flows: {len(new_flows)}. Each of them has at least {flow_pkts_thres} pkts after timeout splitting.')
 
     return new_flows
 
