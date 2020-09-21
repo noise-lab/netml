@@ -1,17 +1,22 @@
-"""AutoEncoder
+"""AutoEncoder"""
 
-"""
-# Authors: kun.bj@outlook.com
-#
-# License: xxx
+from netml.utils.tool import ManualDependencyError
 
-import torch
+try:
+    import torch
+    from torch import nn
+    from torch.utils.data import DataLoader
+except ModuleNotFoundError as exc:
+    raise ManualDependencyError(
+        "AutoEncoder (ae) depends upon PyTorch (torch), the installation of "
+        "which must be tailored to your system.\n\n"
+        "See: https://pytorch.org/get-started/locally/"
+    ) from exc
+
 from pyod.models.base import BaseDetector
 from pyod.utils.stat_models import pairwise_distances_no_broadcast
 from pyod.utils.utility import check_parameter
 from sklearn.utils import check_array
-from torch import nn
-from torch.utils.data import DataLoader
 
 
 class _AutoEncoder(nn.Module):
