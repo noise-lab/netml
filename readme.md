@@ -56,18 +56,18 @@ For more information, refer to `argcmdr`: [Shell completion](https://github.com/
 
 All of the below may be wrapped up into a single command via the CLI:
 
-    netml --pcap=data/demo.pcap           \
-          --label=data/demo.csv           \
-          --output=out/OCSVM-results.dat
+    netml learn --pcap=data/demo.pcap           \
+                --label=data/demo.csv           \
+                --output=out/OCSVM-results.dat
 
 ### PCAP to features
 
 To only extract features via the CLI:
 
-    netml extract                         \
-          --pcap=data/demo.pcap           \
-          --label=data/demo.csv           \
-          --feature=out/IAT-features.dat
+    netml learn extract                         \
+                --pcap=data/demo.pcap           \
+                --label=data/demo.csv           \
+                --feature=out/IAT-features.dat
 
 Or in Python:
 
@@ -105,9 +105,9 @@ print(pp.features.shape, pp.pcap2flows.tot_time, pp.flow2features.tot_time)
 
 To analyze already-extracted features via the CLI:
 
-    netml analyze                         \
-          --feature=out/IAT-features.dat  \
-          --output=out/OCSVM-results.dat
+    netml learn train                           \
+                --feature=out/IAT-features.dat  \
+                --output=out/OCSVM-results.dat
 
 Or in Python:
 
