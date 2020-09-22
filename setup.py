@@ -10,21 +10,31 @@ import pathlib
 from setuptools import find_packages, setup
 
 
-README_PATH = pathlib.Path(__file__).parent / 'readme.md'
+README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
     'numpy==1.18.3',
     'pandas==0.25.1',
+    'pyod==0.8.2',
     'scapy==2.4.3',
     'scikit-learn==0.23.1',
 ]
 
-_CLI_REQUIRES = ['argcmdr==0.6.0']
+_CLI_REQUIRES = [
+    'argcmdr==0.7.0',
+    'argparse-formatter==1.2',
+    'PyYAML==5.3.1',
+    'terminaltables==3.1.0',
+]
+
+_TESTS_REQUIRE = [
+    'tox==3.20.0',
+]
 
 EXTRAS_REQUIRE = {
     'cli': _CLI_REQUIRES,
 
-    'dev': _CLI_REQUIRES + [
+    'dev': _CLI_REQUIRES + _TESTS_REQUIRE + [
         'bumpversion==0.6.0',
         'twine==3.2.0',
         'wheel==0.34.2',
@@ -32,7 +42,6 @@ EXTRAS_REQUIRE = {
 
     # (as yet) unused:
     # 'visualize': ['matplotlib==3.2.1'],
-    # 'tests': ['pytest==5.3.1', 'requests==2.22.0'],
 }
 
 

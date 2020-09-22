@@ -6,3 +6,5 @@ dist/
 .python-version
 
 .idea
+
+.tox/

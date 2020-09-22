@@ -47,9 +47,8 @@ class OCSVM(OneClassSVM):
         max_iter : int, optional (default=-1)
             Hard limit on iterations within solver, or -1 for no limit.
 
-        verbose: int (default is 1)
-            A print level is to control what information should be printed according to the given value.
-            The higher the value is, the more info is printed.
+        verbose: bool (default is False)
+            Enable verbose output.
 
         random_state: int (default is 42)
 

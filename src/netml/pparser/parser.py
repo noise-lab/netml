@@ -637,6 +637,7 @@ def _get_FFT_data(features, fft_bin='', fft_part='real'):
 
 
 class PCAP:
+
     def __init__(self, pcap_file='xxx.pcap', *, flow_ptks_thres=2, verbose=10, random_state=42):
         """PCAP includes all processing functions of pcaps, such as pcap2flows, flow2features, and label_flows .
 
@@ -666,6 +667,8 @@ class PCAP:
         self.flow_ptks_thres = flow_ptks_thres
         self.verbose = verbose
         self.random_state = random_state
+
+        self.labels = None
 
     @timing
     def _pcap2flows(self, interval=0, q_interval=0.1, *, tcp_timeout=600, udp_timeout=600):

@@ -1,12 +1,26 @@
 """repository management tasks"""
 import copy
 import re
+from argparse import REMAINDER
 
-from argcmdr import Local, LocalRoot
+from argcmdr import local, Local, LocalRoot
 
 
 class Manage(LocalRoot):
     """manage the library repository"""
+
+
+@Manage.register
+@local('remainder', metavar='...', nargs=REMAINDER,
+       help="additional arguments for tox (include a '-' to pass options)")
+def test(self, args):
+    """run tests"""
+    if args.remainder and args.remainder[0] == '-':
+        remainder = args.remainder[1:]
+    else:
+        remainder = args.remainder
+
+    return (self.local.FG, self.local['tox'][remainder])
 
 
 @Manage.register

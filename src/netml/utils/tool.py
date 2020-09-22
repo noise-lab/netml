@@ -14,6 +14,10 @@ from datetime import datetime
 import pandas as pd
 
 
+class ManualDependencyError(RuntimeError):
+    pass
+
+
 def dump_data(data, out_file, verbose=True):
     """Save data to pickle file
 
