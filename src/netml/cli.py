@@ -1,9 +1,13 @@
 """Command-line interface for netml library."""
 import argparse
+import contextlib
+import datetime
+import functools
 import importlib
 import inspect
 import itertools
 import pkgutil
+import sys
 import tempfile
 import textwrap
 
@@ -13,6 +17,7 @@ import numpy as np
 import sklearn.model_selection
 import terminaltables
 import yaml
+from plumbum import colors
 
 import netml.ndm
 import netml.ndm.model
@@ -20,22 +25,17 @@ import netml.pparser.parser
 from netml.utils.tool import dump_data, load_data, ManualDependencyError
 
 
-#
-# NOTE: This module is currently considered to be in DEMO state -- as yet, it
-# NOTE: mirrors examples via a console interface, with limited configurability.
-#
-# NOTE: That said, it shouldn't take much for it to be brought to minimum
-# NOTE: viability.
-#
-
 # TODO: (sub)-command to quickly/easily get command-line completion?
 #
 # (likely shouldn't do anything to system, but could at least call out to
 # register-python-argcomplete?)
 
 
-NORMAL = 0
-ABNORMAL = 1
+LABEL_NORMAL = 0
+LABEL_ABNORMAL = 1
+
+CLASS_NORMAL = 1
+CLASS_ABNORMAL = -1
 
 
 # interface for setup.py
@@ -47,25 +47,62 @@ def execute():
 
 # utilities
 
-def extract(pcap_file, label=None, label_file=None, *, random_state, verbosity):
-    pp = netml.pparser.parser.PCAP(
-        pcap_file,
-        flow_ptks_thres=2,
-        verbose=verbosity,
-        random_state=random_state,
-    )
+# NOTE: FileType('rb') with "-" doesn't respect binary flag and so fails --
+# NOTE: https://bugs.python.org/issue14156
 
-    # extract flows from pcap
-    pp.pcap2flows(q_interval=0.9)
+def binary_input_file_type(value, allow_stdin=False):
+    """Open given file path for binary reading.
 
-    # label each flow
-    if label is not None or label_file is not None:
-        pp.label_flows(label_file=label_file, label=label)
+    Optionally return STDIN given the value "-".
 
-    # extract features from each flow given feat_type
-    pp.flow2features('IAT', fft=False, header=False)
+    """
+    if allow_stdin and value == '-':
+        return sys.stdin.buffer
 
-    return pp
+    return open(value, 'rb')
+
+
+binary_input_file_type_stdin = functools.partial(binary_input_file_type, allow_stdin=True)
+
+
+# base command class
+
+class Command(argcmdr.Command):
+
+    def extract(self, pcap_file, label=None, label_file=None):
+        """Parse PCAP file and extract its flows and features.
+
+        Labels, for model-testing, are applied if specified.
+
+        """
+        pcap = netml.pparser.parser.PCAP(
+            pcap_file,
+            flow_ptks_thres=self.args.flow_pkts_threshold,
+            verbose=self.args.verbosity,
+            random_state=self.args.random_state,
+        )
+
+        # extract flows from pcap
+        pcap.pcap2flows(q_interval=self.args.q_interval)
+
+        # label each flow
+        if label is not None or label_file is not None:
+            pcap.label_flows(label_file=label_file, label=label)
+
+        # extract features from each flow given feat_type
+        # TODO: support specification of remaining feature types
+        pcap.flow2features('IAT', fft=False, header=False)
+
+        return pcap
+
+    def vprint(self, level, *args, **kwargs):
+        """Print IFF verbosity level meets or exceeds `level`."""
+        if self.args.verbosity >= level:
+            print(*args, **kwargs)
+
+    def vtable(self, level, rows, title=None):
+        """Print tabular data IFF verbosity level meets or exceeds `level`."""
+        self.vprint(level, terminaltables.AsciiTable(rows, title=title).table)
 
 
 # commands
@@ -83,6 +120,21 @@ class Main(argcmdr.RootCommand):
             help="verbosity level (default: 1)",
         )
         parser.add_argument(
+            '--flow-pkts-threshold',
+            type=int,
+            metavar='INT',
+            default=2,
+            help="minimum packets per extracted flow (default: 2)",
+        )
+        parser.add_argument(
+            '--q-interval',
+            type=float,
+            metavar='FLOAT',
+            default=0.9,
+            help="quantile between [0, 1] by which flow duration interval is determined "
+                 "(default: 0.9)",
+        )
+        parser.add_argument(
             '--random-state',
             metavar='INT',
             type=int,
@@ -92,7 +144,103 @@ class Main(argcmdr.RootCommand):
 
 
 @Main.register
-class Learn(argcmdr.Command):
+class Classify(Command):
+    """classify network activity"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            '--report-all',
+            action='store_true',
+            default=None,
+            dest='report_all',
+            help="report non-anomalous packet flows "
+                 "(by default only reported at verbosity greater than 1)",
+        )
+        parser.add_argument(
+            '--no-report-all',
+            action='store_false',
+            default=None,
+            dest='report_all',
+            help="do NOT report non-anomalous packet flows "
+                 "(by default only reported at verbosity greater than 1)",
+        )
+
+        # TODO: might be cool to be able to "follow" input, classifying it in chunks
+        parser.add_argument(
+            '-p', '--pcap',
+            metavar='FILE',
+            # NOTE: FileType('rb') with "-" doesn't respect binary flag and so fails --
+            # NOTE: https://bugs.python.org/issue14156
+            type=binary_input_file_type_stdin,
+            help='path to packet capture (pcap) file '
+                 '(the value "-" or the omission of this option indicates standard input)',
+        )
+
+        parser.add_argument(
+            '-m', '--model',
+            metavar='FILE',
+            required=True,
+            type=binary_input_file_type,
+            help='path to trained novelty-detection model',
+        )
+
+    def __call__(self, args, parser):
+        pcap_file = args.pcap
+
+        if pcap_file is None:
+            if sys.stdin.isatty():
+                parser.error("the following arguments are required "
+                             "when standard input is not specified: -p/--pcap")
+
+            pcap_file = sys.stdin.buffer
+
+        pcap = self.extract(pcap_file)
+
+        # TODO: catch model file issues such as EOFError
+        (model, train_history) = load_data(args.model)
+
+        classifications = model.predict(pcap.features)
+
+        for ((flow_key, flow_packets), classification) in zip(pcap.flows, classifications):
+            if classification == CLASS_NORMAL:
+                if args.report_all is None:
+                    if args.verbosity <= 1:
+                        continue
+                elif not args.report_all:
+                    continue
+
+                class_tag = 'NORMAL'
+            elif classification == CLASS_ABNORMAL:
+                class_tag = 'ANOMALY' | colors.red | colors.bold
+            else:
+                class_tag = '[unclassified]'
+
+            if flow_key[4] == 6:
+                packet_type = 'TCP'
+            elif flow_key[4] == 17:
+                packet_type = 'UDP'
+            else:
+                packet_type = '[protocol-other]'
+
+            (packet_datetime0, packet_datetime1) = packet_datetimes = [
+                datetime.datetime.fromtimestamp(packet.time)
+                for packet in (flow_packets[0], flow_packets[-1])
+            ]
+            packet_date = packet_datetime0.date()
+            (packet_time0, packet_time1) = (
+                packet_datetime.time()
+                for packet_datetime in packet_datetimes
+            )
+
+            print(
+                f'[{packet_date}] [{packet_time0} – {packet_time1}]',
+                f'{flow_key[0]}:{flow_key[2]} → {flow_key[1]}:{flow_key[3]} [{packet_type}]',
+                class_tag,
+            )
+
+
+@Main.register
+class Learn(Command):
     """train & test anomaly-detection models"""
 
     FEATURE_SPOOL_MAX_SIZE = 50 * 1024 ** 2  # 50 MB
@@ -125,8 +273,9 @@ class Learn(argcmdr.Command):
             '-p', '--pcap',
             action='append',
             metavar='FILE',
+            # TODO: support optionless input like classify
             type=argparse.FileType('rb'),
-            help=f'path(s) to packet capture (pcap) file(s)',
+            help='path(s) to packet capture (pcap) file(s)',
         )
         pcap_labeling.add_argument(
             '-l', '--label',
@@ -159,6 +308,7 @@ class Learn(argcmdr.Command):
             "features & model",
             "Specify paths at which to store extracted features and the trained model."
         )
+        # TODO: support optionless output (like classify)
         feature_modeling.add_argument(
             '-f', '--feature',
             metavar='FILE',
@@ -223,11 +373,11 @@ class Learn(argcmdr.Command):
 
         # add'l help
         if args.help_algorithm:
-            self.print_help_algorithm()
+            self.perform_help_algorithm()
             return
 
         if args.help_param:
-            self.print_help_param()
+            self.perform_help_param()
             return
 
         # dynamic argument checks
@@ -260,39 +410,52 @@ class Learn(argcmdr.Command):
         )
 
         # actions
-        if self.action_extract in actions:
-            pcaps = args.pcap or ()
-            labels = ({'label_file': label} for label in args.label or itertools.repeat(None))
+        with contextlib.ExitStack() as stack:
+            # ensure file descriptors close
+            # (otherwise closed at exit; but, at least, this doesn't work for tests)
+            for file_descriptor in itertools.chain(
+                args.pcap or (),
+                args.pcap_normal or (),
+                args.pcap_abnormal or (),
+                args.label or (),
+                (
+                    feature_descriptor,
+                    args.output,
+                )
+            ):
+                if file_descriptor:
+                    stack.enter_context(file_descriptor)
 
-            pcaps_normal = args.pcap_normal or ()
-            labels_normal = ({'label': NORMAL} for _count in itertools.count())
+            # extract
+            if self.action_extract in actions:
+                pcaps = args.pcap or ()
+                labels = ({'label_file': label} for label in args.label or itertools.repeat(None))
 
-            pcaps_abnormal = args.pcap_abnormal or ()
-            labels_abnormal = ({'label': ABNORMAL} for _count in itertools.count())
+                pcaps_normal = args.pcap_normal or ()
+                labels_normal = ({'label': LABEL_NORMAL} for _count in itertools.count())
 
-            self.extract(
-                itertools.chain(
-                    zip(pcaps, labels),
-                    zip(pcaps_normal, labels_normal),
-                    zip(pcaps_abnormal, labels_abnormal),
-                ),
-                feature_descriptor,
-            )
+                pcaps_abnormal = args.pcap_abnormal or ()
+                labels_abnormal = ({'label': LABEL_ABNORMAL} for _count in itertools.count())
 
-        if self.action_train in actions:
-            self.train(
-                feature_descriptor,
-                args.output,
-            )
+                self.perform_extract(
+                    itertools.chain(
+                        zip(pcaps, labels),
+                        zip(pcaps_normal, labels_normal),
+                        zip(pcaps_abnormal, labels_abnormal),
+                    ),
+                    feature_descriptor,
+                )
 
-    def extract(self, pcap_file_labels, feature_file):
+            # train
+            if self.action_train in actions:
+                self.perform_train(
+                    feature_descriptor,
+                    args.output,
+                )
+
+    def perform_extract(self, pcap_file_labels, feature_file):
         pcaps = [
-            extract(
-                pcap_file,
-                random_state=self.args.random_state,
-                verbosity=self.args.verbosity,
-                **label_kwargs
-            )
+            self.extract(pcap_file, **label_kwargs)
             for (pcap_file, label_kwargs) in pcap_file_labels
         ]
 
@@ -327,7 +490,7 @@ class Learn(argcmdr.Command):
         # for next step (if any):
         feature_file.seek(0)
 
-    def train(self, feature_file, output_file):
+    def perform_train(self, feature_file, output_file):
         (features, labels) = load_data(feature_file)
 
         # train (and test split)
@@ -339,14 +502,11 @@ class Learn(argcmdr.Command):
             features_train = features
             features_test = labels_test = _labels_train = None
 
-            if self.args.verbosity > 1:
-                print(
-                    terminaltables.AsciiTable([
-                        ('', 'features', 'labels'),
-                        ('train', features_train.shape, 'n/a'),
-                        ('test', 'n/a', 'n/a'),
-                    ], title='data shapes').table
-                )
+            self.vtable(2, [
+                ('', 'features', 'labels'),
+                ('train', features_train.shape, 'n/a'),
+                ('test', 'n/a', 'n/a'),
+            ], title='data shapes')
         else:
             (
                 features_train,
@@ -358,17 +518,13 @@ class Learn(argcmdr.Command):
                                                          test_size=self.args.test_size,
                                                          random_state=self.args.random_state)
 
-            if self.args.verbosity > 1:
-                print(
-                    terminaltables.AsciiTable([
-                        ('', 'features', 'labels'),
-                        ('train', features_train.shape, 'n/a'),
-                        ('test', features_test.shape, labels_test.shape),
-                    ], title='data shapes').table
-                )
+            self.vtable(2, [
+                ('', 'features', 'labels'),
+                ('train', features_train.shape, 'n/a'),
+                ('test', features_test.shape, labels_test.shape),
+            ], title='data shapes')
 
-        if self.args.verbosity > 1:
-            print(f'model name: {self.args.algorithm}')
+        self.vprint(2, f'model name: {self.args.algorithm}')
 
         # param may be:
         # * unspecified (None)
@@ -378,8 +534,7 @@ class Learn(argcmdr.Command):
         if isinstance(params.get(self.args.algorithm), dict):
             params = params[self.args.algorithm]
 
-        if self.args.verbosity > 1:
-            print(f'param override: {params}')
+        self.vprint(2, f'param override: {params}')
 
         model_class = self.load_algorithmic_model(self.args.algorithm)
 
@@ -418,22 +573,16 @@ class Learn(argcmdr.Command):
         # dump data to disk
         dump_data((model, ndm.history), out_file=output_file)
 
-        # FIXME?: (file handlers otherwise closed at exit; but, this doesn't work for tests)
-        output_file.close()
+        self.vtable(1, [
+            ('train time (s)', 'test time (s)', 'model score (auc)'),
+            (
+                time_train,
+                'n/a' if time_test is None else time_test,
+                getattr(ndm, 'score', 'n/a'),
+            ),
+        ], title='training performance')
 
-        if self.args.verbosity > 0:
-            print(
-                terminaltables.AsciiTable([
-                    ('train time (s)', 'test time (s)', 'model score (auc)'),
-                    (
-                        time_train,
-                        'n/a' if time_test is None else time_test,
-                        getattr(ndm, 'score', 'n/a'),
-                    ),
-                ], title='training performance').table
-            )
-
-    def print_help_algorithm(self, title_addendum='', include_docs=True):
+    def perform_help_algorithm(self, title_addendum='', include_docs=True):
         print(f"{self.args.__parser__.prog}: model-training algorithms", title_addendum)
 
         for (model_name, model_class) in self.load_algorithmic_model().items():
@@ -471,8 +620,8 @@ class Learn(argcmdr.Command):
 
                 print(textwrap.indent(doc.strip(), '  '))
 
-    def print_help_param(self):
-        self.print_help_algorithm(
+    def perform_help_param(self):
+        self.perform_help_algorithm(
             title_addendum='(params only)',
             include_docs=False,
         )

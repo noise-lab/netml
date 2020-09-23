@@ -77,7 +77,7 @@ def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=60
     pcap_file: str
         a pcap needed to processed.
 
-    flow_ptks_thres: int (default is 2)
+    flow_pkts_thres: int (default is 2)
         the minimum number of packets of each flow is to control which flow should be kept
         and which one should be discarded. The default value is 2, i.e., all the flows which have less than 2 packets
         are discarded. It must be >= 2.
