@@ -10,14 +10,14 @@ Parse pcaps to produce flow features using [Scapy](https://scapy.net/).
 * `ndm`: novelty detection modeling\
 Detect novelties / anomalies, via different models, such as OCSVM.
 
-The tool's command-line interface is documented by its built-in help flags `-h` and `--help`:
+The tool's command-line interface is documented by its built-in help flags such as `-h` and `--help`:
 
     netml --help
 
 
 ## Installation
 
-`netml` is available on [PyPI](https://pypi.org/project/netml/):
+The `netml` library is available on [PyPI](https://pypi.org/project/netml/):
 
     pip install netml
 
@@ -54,13 +54,60 @@ For more information, refer to `argcmdr`: [Shell completion](https://github.com/
 
 ## Use
 
+### Classification of network traffic for outlier detection
+
+Having [trained a model](#training-a-network-traffic-model) to your network traffic, the identification of anomalous traffic is as simple as providing a packet capture (PCAP) file to the `netml classify` command of the CLI:
+
+    netml classify --model=model.dat < unclassified.pcap
+
+Using the Python library, the same might be accomplished, _e.g._:
+
+```python3
+from netml.pparser.parser import PCAP
+from netml.utils.tool import load_data
+
+pcap = PCAP(
+    'unclassified.pcap',
+    flow_ptks_thres=2,
+    random_state=42,
+    verbose=10,
+)
+
+# extract flows from pcap
+pcap.pcap2flows(q_interval=0.9)
+
+# extract features from each flow given feat_type
+pcap.flow2features('IAT', fft=False, header=False)
+
+(model, train_history) = load_data('model.dat')
+
+model.predict(pcap.features)
+```
+
+### Training a network traffic model
+
+A model may be trained for outlier detection as simply as providing a PCAP file to the `netml learn` command:
+
+    netml learn --pcap=traffic.pcap \
+                --output=model.dat
+
+(Note that for clarity and consistency with the `classify` command, the flags `--output` and `--model` are synonymous to the `learn` command.)
+
+`netml learn` supports a great many additional options, documented by `netml learn --help`, `--help-algorithm` and `--help-param`, including:
+
+* `--algorithm`: selection of model-training algorithms, such as One-Class Support Vector Machine (OCSVM), Kernel Density Estimation (KDE), Isolation Forest (IF) and Autoencoder (AE)
+* `--param`: customization of model hyperparameters via YAML/JSON
+* `--label`, `--pcap-normal` & `--pcap-abnormal`: optional labeling of traffic to enable post-training testing of the model
+
+In the below examples, an OCSVM model is trained by demo traffic included in the library, and tested by labels in a CSV file, (both provided by the University of New Brunswick's [Intrusion Detection Systems dataset](https://www.unb.ca/cic/datasets/ids-2017.html)).
+
 All of the below may be wrapped up into a single command via the CLI:
 
     netml learn --pcap=data/demo.pcap           \
                 --label=data/demo.csv           \
                 --output=out/OCSVM-results.dat
 
-### PCAP to features
+#### PCAP to features
 
 To only extract features via the CLI:
 
@@ -72,38 +119,35 @@ To only extract features via the CLI:
 Or in Python:
 
 ```python3
-import os
-
 from netml.pparser.parser import PCAP
 from netml.utils.tool import dump_data
 
-RANDOM_STATE = 42
-
-pcap_file = 'data/demo.pcap'
-pp = PCAP(pcap_file, flow_ptks_thres=2, verbose=10, random_state=RANDOM_STATE)
+pcap = PCAP(
+    'data/demo.pcap',
+    flow_ptks_thres=2,
+    random_state=42,
+    verbose=10,
+)
 
 # extract flows from pcap
-pp.pcap2flows(q_interval=0.9)
+pcap.pcap2flows(q_interval=0.9)
 
-# label each flow with a label
-label_file = 'data/demo.csv'
-pp.label_flows(label_file=label_file)
+# label each flow (optional)
+pcap.label_flows(label_file='data/demo.csv')
 
-# extract features from each flow given feat_type
-feat_type = 'IAT'
-pp.flow2features(feat_type, fft=False, header=False)
+# extract features from each flow via IAT
+pcap.flow2features('IAT', fft=False, header=False)
 
 # dump data to disk
-X, y = pp.features, pp.labels
-out_dir = os.path.join('out', os.path.dirname(pcap_file))
-dump_data((X, y), out_file=f'{out_dir}/demo_{feat_type}.dat')
+dump_data((pcap.features, pcap.labels), out_file='out/IAT-features.dat')
 
-print(pp.features.shape, pp.pcap2flows.tot_time, pp.flow2features.tot_time)
+# stats
+print(pcap.features.shape, pcap.pcap2flows.tot_time, pcap.flow2features.tot_time)
 ```
 
-### Novelty detection
+#### Features to model
 
-To analyze already-extracted features via the CLI:
+To train from already-extracted features via the CLI:
 
     netml learn train                           \
                 --feature=out/IAT-features.dat  \
@@ -112,8 +156,6 @@ To analyze already-extracted features via the CLI:
 Or in Python:
 
 ```python3
-import os
-
 from sklearn.model_selection import train_test_split
 
 from netml.ndm.model import MODEL
@@ -123,26 +165,31 @@ from netml.utils.tool import dump_data, load_data
 RANDOM_STATE = 42
 
 # load data
-data_file = 'out/data/demo_IAT.dat'
-X, y = load_data(data_file)
-# split train and test test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=RANDOM_STATE)
+(features, labels) = load_data('out/IAT-features.dat')
+
+# split train and test sets
+(
+    features_train,
+    features_test,
+    labels_train,
+    labels_test,
+) = train_test_split(features, labels, test_size=0.33, random_state=RANDOM_STATE)
 
 # create detection model
-model = OCSVM(kernel='rbf', nu=0.5, random_state=RANDOM_STATE)
-model.name = 'OCSVM'
-ndm = MODEL(model, score_metric='auc', verbose=10, random_state=RANDOM_STATE)
+ocsvm = OCSVM(kernel='rbf', nu=0.5, random_state=RANDOM_STATE)
+ocsvm.name = 'OCSVM'
+ndm = MODEL(ocsvm, score_metric='auc', verbose=10, random_state=RANDOM_STATE)
 
-# learned the model from the train set
-ndm.train(X_train, y_train)
+# train the model from the train set
+ndm.train(features_train)
 
-# evaluate the learned model
-ndm.test(X_test, y_test)
+# evaluate the trained model
+ndm.test(features_test, labels_test)
 
 # dump data to disk
-out_dir = os.path.dirname(data_file)
-dump_data((model, ndm.history), out_file=f'{out_dir}/{ndm.model_name}-results.dat')
+dump_data((ocsvm, ndm.history), out_file='out/OCSVM-results.dat')
 
+# stats
 print(ndm.train.tot_time, ndm.test.tot_time, ndm.score)
 ```
 
@@ -151,39 +198,35 @@ For more examples, see the `examples/` directory in the source repository.
 
 ## Architecture
 
-- docs/: 
-    includes all documents (such as APIs)
-- examples/: 
-    includes toy examples and datasets for you to play with it 
-- ndm/: 
-    includes different detection models (such as OCSVM)
-- pparser/: 
-    includes pcap propcess (feature extraction from pcap) 
-- scripts/: 
-    others (such as xxx.sh, make) 
-- tests/: 
-    includes test cases
-- utils/: 
-    includes common functions (such as load data and dump data)
-- visul/: 
-    includes visualization functions
-- LICENSE.txt
-- README.md
-- requirements.txt
-- setup.py
+- `examples/`\
+example code and datasets
+- `src/netml/ndm/`\
+detection models (such as OCSVM)
+- `src/netml/pparser/`\
+pcap processing (feature extraction) 
+- `src/netml/utils/`\
+common functions (such as `load_data` and `dump_data`)
+- `tests/`\
+test cases
+- `LICENSE.txt`
+- `manage.py`\
+library development & management module
+- `README.md`
+- `setup.cfg`
+- `setup.py`
+- `tox.ini`
 
 
 ## To Do
 
-The current version just implements basic functions. We still need to further evaluate and optimize them continually. 
+Further work includes:
 
-- Evaluate 'pparser' performance on different pcaps
-- Add 'test' cases
-- Add license
-- Add more examples
-- Generated docs from docs-string automatically
+- Evaluate `pparser` performance on different pcaps
+- Add test cases
+- Add examples
+- Add (generated) docs
 
-Welcome to make any comments to make it more robust and easier to use!
+We welcome any comments to make this tool more robust and easier to use!
 
 
 ## Development
