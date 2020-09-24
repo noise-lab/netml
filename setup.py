@@ -13,8 +13,8 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
-    'numpy==1.18.3',
-    'pandas==0.25.1',
+    'numpy==1.19.2',
+    'pandas==1.1.2',
     'pyod==0.8.2',
     'scapy==2.4.3',
     'scikit-learn==0.23.1',
