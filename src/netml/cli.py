@@ -574,7 +574,7 @@ class Learn(Command):
         dump_data((model, ndm.history), out_file=output_file)
 
         self.vtable(1, [
-            ('train time (s)', 'test time (s)', 'model score (auc)'),
+            ('train time (m)', 'test time (m)', 'model score (auc)'),
             (
                 time_train,
                 'n/a' if time_test is None else time_test,
