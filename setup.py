@@ -15,6 +15,7 @@ README_PATH = pathlib.Path(__file__).parent / 'README.md'
 INSTALL_REQUIRES = [
     'numpy==1.19.2',
     'pandas==1.1.2',
+    'matplotlib==3.2.2',  # avoid pyinstaller executable error
     'pyod==0.8.2',
     'scapy==2.4.3',
     'scikit-learn==0.23.1',
@@ -38,6 +39,7 @@ EXTRAS_REQUIRE = {
         'bumpversion==0.6.0',
         'twine==3.2.0',
         'wheel==0.34.2',
+        'pyinstaller==4.0',
     ],
 
     # (as yet) unused:
