@@ -1,4 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
+#
+# see: https://github.com/pyinstaller/pyinstaller/issues/305
+# see: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Setuptools-Entry-Point
+#
 import pkg_resources
 
 
