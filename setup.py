@@ -15,10 +15,15 @@ README_PATH = pathlib.Path(__file__).parent / 'README.md'
 INSTALL_REQUIRES = [
     'numpy==1.19.2',
     'pandas==1.1.2',
-    'matplotlib==3.2.2',  # avoid pyinstaller executable error
     'pyod==0.8.2',
     'scapy==2.4.3',
     'scikit-learn==0.23.1',
+
+    # pins
+    #
+    # avoid pyinstaller executable error
+    # https://stackoverflow.com/questions/63503976/nameerror-name-defaultparams-is-not-defined-while-running-the-exe-converted
+    'matplotlib==3.2.2',
 ]
 
 _CLI_REQUIRES = [
