@@ -1,0 +1,22 @@
+name: Build netml CLI binaries
+
+on:
+  push:
+    branches: [jsl/one-exec]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build linux binary
+      uses: JackMcKew/pyinstaller-action-linux@0.1.4
+      with:
+        path: .
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: netml-linux
+        path: ./dist/linux
