@@ -6,17 +6,30 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Build linux binary
-      uses: JackMcKew/pyinstaller-action-linux@0.1.4
-      with:
-        path: .
+      # - name: Build linux binary
+      #   uses: JackMcKew/pyinstaller-action-linux@0.1.4
+      #   with:
+      #     path: .
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: netml-linux
-        path: ./dist/linux
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+
+      - name: Build & install dev package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .[dev]
+
+      - name: Build Linux binary
+        run: pyinstaller --clean -y --dist ./dist/linux --workpath /tmp pyi.spec
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: netml-linux
+          path: ./dist/linux
