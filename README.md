@@ -247,3 +247,15 @@ Development tasks are then managed via [`argcmdr`](https://github.com/dssg/argcm
 ## Thanks
 
 `netml` is based on the initial work of the ["Outlier Detection" library `odet`](https://github.com/Learn-Live/odet) 🙌
+
+
+## Citation
+
+    @article{yang2020comparative,
+             title={A Comparative Study of Network Traffic Representations for Novelty Detection},
+             author={Kun Yang and Samory Kpotufe and Nick Feamster},
+             year={2020},
+             eprint={2006.16993},
+             archivePrefix={arXiv},
+             primaryClass={cs.NI}
+    }
