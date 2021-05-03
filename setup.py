@@ -13,11 +13,11 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
-    'numpy==1.19.2',
-    'pandas==1.1.2',
-    'pyod==0.8.2',
-    'scapy==2.4.3',
-    'scikit-learn==0.23.1',
+    'numpy ~= 1.20.2',
+    'pandas ~= 1.1.5',
+    'pyod ~= 0.8.8',
+    'scapy ~= 2.4.5',
+    'scikit-learn ~= 0.24.1',
 ]
 
 _CLI_REQUIRES = [
@@ -63,6 +63,7 @@ setup(name='netml',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
           'Topic :: Software Development :: Libraries',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
