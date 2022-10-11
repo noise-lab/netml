@@ -54,8 +54,17 @@ class OCSVM(OneClassSVM):
 
         """
         super(OCSVM, self).__init__(
-            kernel, degree, gamma, coef0, tol, nu,
-            shrinking, cache_size, verbose, max_iter)
+            kernel=kernel,
+            degree=degree,
+            gamma=gamma,
+            coef0=coef0,
+            tol=tol,
+            nu=nu,
+            shrinking=shrinking,
+            cache_size=cache_size,
+            verbose=verbose,
+            max_iter=max_iter,
+        )
 
         self.random_state = random_state
         self.verbose = verbose

@@ -13,22 +13,22 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
-    'numpy ~= 1.20.2',
-    'pandas ~= 1.1.5',
-    'pyod ~= 0.8.8',
+    'numpy ~= 1.23.3',
+    'pandas ~= 1.5.0',
+    'pyod ~= 1.0.5',
     'scapy ~= 2.4.5',
-    'scikit-learn ~= 0.24.1',
+    'scikit-learn ~= 1.1.2',
 ]
 
 _CLI_REQUIRES = [
-    'argcmdr==0.7.0',
-    'argparse-formatter==1.2',
-    'PyYAML==5.3.1',
-    'terminaltables==3.1.0',
+    'argcmdr==0.13.1',
+    'argparse-formatter==1.4',
+    'PyYAML==6.0',
+    'terminaltables==3.1.10',
 ]
 
 _TESTS_REQUIRE = [
-    'tox==3.20.0',
+    'tox==3.26.0',
 ]
 
 EXTRAS_REQUIRE = {
@@ -36,8 +36,8 @@ EXTRAS_REQUIRE = {
 
     'dev': _CLI_REQUIRES + _TESTS_REQUIRE + [
         'bumpversion==0.6.0',
-        'twine==3.2.0',
-        'wheel==0.34.2',
+        'twine==4.0.1',
+        'wheel==0.37.1',
     ],
 
     # (as yet) unused:
@@ -52,7 +52,7 @@ setup(name='netml',
       long_description_content_type="text/markdown",
       url='https://github.com/chicago-cdac/netml',
       # license='xxx',  # FIXME
-      python_requires='>=3.7.3,<4',
+      python_requires='>=3.8.11,<3.11',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=[
@@ -61,9 +61,9 @@ setup(name='netml',
           'Intended Audience :: Education',
           'Intended Audience :: Science/Research',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10',
           'Topic :: Software Development :: Libraries',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
@@ -73,5 +73,4 @@ setup(name='netml',
       package_dir={'': 'src'},
       entry_points={
           'console_scripts': ['netml=netml.cli:execute [cli]'],
-      },
-)
+      })

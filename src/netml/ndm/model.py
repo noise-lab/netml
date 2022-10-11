@@ -12,6 +12,7 @@ from netml.utils.tool import timing
 
 
 class MODEL:
+
     def __init__(self, model=None, *, score_metric='auc', verbose=1, random_state=42):
         """Train and test a model on a given data.
 
