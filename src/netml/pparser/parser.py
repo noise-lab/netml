@@ -771,7 +771,7 @@ class PCAP:
         """
         self.feat_type = feat_type
 
-        num_pkts = [len(pkts) for pkts in self.flows]
+        num_pkts = [len(flow[1]) for flow in self.flows]
         dim = int(np.floor(np.quantile(num_pkts, self.q_interval)))  # use the same q_interval to get the dimension
 
         if feat_type in ['IAT', 'FFT-IAT']:
