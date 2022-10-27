@@ -785,7 +785,7 @@ class PCAP:
             self.dim = 2 * dim - 1
             self.features, self.fids = _get_IAT_SIZE(self.flows)
         elif feat_type in ['STATS']:
-            self.dim = 10
+            self.dim = 12
             self.features, self.fids = _get_STATS(self.flows)
         elif feat_type in ['SAMP_NUM', 'FFT-SAMP_NUM']:
             self.dim = dim - 1
@@ -801,7 +801,7 @@ class PCAP:
         else:
             msg = f'feat_type ({feat_type}) is not correct! '
             raise ValueError(msg)
-
+        dim = self.dim
         if fft:
             self.features = _get_FFT_data(self.features, fft_bin=dim)
         else:
