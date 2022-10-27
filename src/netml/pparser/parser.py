@@ -452,7 +452,7 @@ def _get_STATS(flows):
 
         q1, q2, q3 = np.quantile(sizes, q=[0.25, 0.5, 0.75])  # q should be [0,1] and q2 is np.median(data)
         base_features = [sub_duration, pkts_rate, bytes_rate, np.mean(sizes), np.std(sizes),
-                         q1, q2, q3, np.min(sizes), np.max(sizes)]
+                         q1, q2, q3, np.min(sizes), np.max(sizes), num_pkts, num_bytes]
 
         features.append(base_features)
 
