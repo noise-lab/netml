@@ -13,6 +13,7 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
+    'netaddr ~= 0.8.0',
     'numpy ~= 1.23.3',
     'pandas ~= 1.5.0',
     'pyod ~= 1.0.5',

@@ -1,18 +1,26 @@
 """PCAP parser
+
 'pparser' parses pcaps to flow features by Scapy.
+
 """
-# Authors: kun.bj@outlook.com
-#
-# License: xxx
+import ipaddress
+from collections import OrderedDict
+from datetime import datetime
 
-import datetime
-from collections import Counter, OrderedDict
-
+import netaddr
 import numpy as np
 import pandas as pd
+
+#
+# FIXME: 'import *' bad for a number of reasons...
+#
+# For one: the below imports class 'datetime.datetime' and invalidates our import of the module.
+#
+# (So for now we'll import the class datetime.datetime as well.)
+#
 from scapy.all import *
+
 from scapy.layers.inet import IP, TCP, UDP
-from sklearn.utils import shuffle
 
 from netml.utils.tool import data_info, timing
 
@@ -28,10 +36,10 @@ def _get_fid(pkt):
     """
 
     if IP in pkt and TCP in pkt:
-        flow_type = 'TCP'
+        # flow_type = 'TCP'
         fid = (pkt[IP].src, pkt[IP].dst, pkt[TCP].sport, pkt[TCP].dport, 6)
     elif IP in pkt and UDP in pkt:
-        flow_type = 'UDP'
+        # flow_type = 'UDP'
         fid = (pkt[IP].src, pkt[IP].dst, pkt[UDP].sport, pkt[UDP].dport, 17)
     else:  # others
         fid = ('', '', -1, -1, -1)
@@ -669,14 +677,15 @@ class PCAP:
         Returns
         -------
             a PCAP instance
-        """
 
+        """
         self.pcap_file = pcap_file
         self.flow_ptks_thres = flow_ptks_thres
         self.verbose = verbose
         self.random_state = random_state
 
         self.labels = None
+        self.df = None
 
     @timing
     def _pcap2flows(self, interval=0, q_interval=0.1, *, tcp_timeout=600, udp_timeout=600):
@@ -933,3 +942,132 @@ class PCAP:
         """
         _, tot_time = self._label_flows(label_file, label)
         self.label_flows.__dict__['tot_time'] = tot_time
+
+    def _iter_pcap_dict(self):
+        """Stream extracted dict mappings from PCAP file.
+
+        Requires:
+          self.pcap_file: string filepath of PCAP file
+
+        Returns:
+          Iterator of dicts with one dict per packet in pcap file.
+
+            The dicts have the following key/value pairs:
+
+              "time"      : time the packet was receieved in seconds since epoch
+              "datetime"  : time the packet was received as a datetime object
+              "length"    : length of packet in bytes
+              "mac_src"   : source MAC address
+              "mac_dst"   : destination MAC address
+              "ip_src"    : source IP address
+              "ip_dst"    : destination IP address
+              "protocol"  : 'TCP', 'UDP', 'ICMP', or None
+              "port_src"  : source port
+              "port_dst"  : destination port
+              "is_dns"    : True if packet is DNS packet, else False
+              "dns_query" : string DNS query
+              "dns_resp"  : string DNS response
+
+        """
+        with PcapReader(self.pcap_file) as pcap_reader:
+            for pkt in pcap_reader:
+                if Ether not in pkt:
+                    continue
+
+                pkt_dict = {
+                    'time': pkt.time,
+                    'datetime': datetime.fromtimestamp(int(pkt.time)),
+                    'length': len(pkt),
+                    'mac_dst': pkt[Ether].dst,
+                    'mac_src': pkt[Ether].src,
+                    'ip_dst': None,
+                    'ip_src': None,
+                    'protocol': None,
+                    'port_dst': None,
+                    'port_src': None,
+                    'is_dns': False,
+                    'dns_query': None,
+                    'dns_resp': None,
+                }
+
+                if IP in pkt:
+                    pkt_dict['ip_dst'] = pkt[IP].dst
+                    pkt_dict['ip_src'] = pkt[IP].src
+
+                if TCP in pkt:
+                    pkt_dict['port_dst'] = pkt[TCP].dport
+                    pkt_dict['port_src'] = pkt[TCP].sport
+                    pkt_dict['protocol'] = 'TCP'
+                elif UDP in pkt:
+                    pkt_dict['port_dst'] = pkt[UDP].dport
+                    pkt_dict['port_src'] = pkt[UDP].sport
+                    pkt_dict['protocol'] = 'UDP'
+                elif ICMP in pkt:
+                    pkt_dict['protocol'] = 'ICMP'
+
+                if (dnsqr := pkt.getlayer(DNSQR)) is not None:
+                    pkt_dict.update(
+                        is_dns=True,
+                        dns_query=(
+                            dnsqr.qname.decode('utf-8')
+                            if isinstance(dnsqr.qname, bytes)
+                            else dnsqr.qname,
+                        )
+                    )
+
+                if (dnsrr := pkt.getlayer(DNSRR)) is not None:
+                    pkt_dict.update(
+                        is_dns=True,
+                        dns_resp=(
+                            dnsrr.rrname.decode('utf-8')
+                            if isinstance(dnsrr.rrname, bytes)
+                            else dnsrr.rrname,
+                        )
+                    )
+
+                yield pkt_dict
+
+    @timing
+    def _pcap2pandas(self):
+        """Parse PCAP file into pandas DataFrame.
+
+        Requires:
+            self.pcap_file: string filepath of PCAP file
+
+        Returns:
+          DataFrame with one packet per row.
+            column names are the keys from pcap_to_dict plus
+            'ip_dst_int', 'ip_src_int', 'mac_dst_int', 'mac_dst_int'
+
+        """
+        self.df = pd.DataFrame(self._iter_pcap_dict())
+
+        self.df['datetime'] = pd.to_datetime(self.df['datetime'])
+
+        self.df['ip_dst_int'] = self.df['ip_dst'].apply(
+            lambda x: None if x is None else int(ipaddress.ip_address(x)))
+
+        self.df['ip_src_int'] = self.df['ip_src'].apply(
+            lambda x: None if x is None else int(ipaddress.ip_address(x)))
+
+        self.df['mac_dst_int'] = self.df['mac_dst'].apply(
+            lambda x: None if x is None else int(netaddr.EUI(x)))
+
+        self.df['mac_src_int'] = self.df['mac_src'].apply(
+            lambda x: None if x is None else int(netaddr.EUI(x)))
+
+        self.df['time_normed'] = self.df['time'].apply(lambda x: x - self.df.iloc[0]['time'])
+
+        self.df.sort_index(axis=1, inplace=True)
+
+    def pcap2pandas(self):
+        """Parse PCAP file into pandas DataFrame.
+
+        Requires:
+            self.pcap_file: string filepath of pcap file
+
+        Sets:
+            self.df
+
+        """
+        (_, self.pcap2pandas.__dict__['tot_time']) = self._pcap2pandas()
