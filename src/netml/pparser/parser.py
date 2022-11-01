@@ -785,7 +785,7 @@ class PCAP:
             self.dim = 2 * dim - 1
             self.features, self.fids = _get_IAT_SIZE(self.flows)
         elif feat_type in ['STATS']:
-            self.dim = 10
+            self.dim = 12
             self.features, self.fids = _get_STATS(self.flows)
         elif feat_type in ['SAMP_NUM', 'FFT-SAMP_NUM']:
             self.dim = dim - 1
@@ -803,14 +803,14 @@ class PCAP:
             raise ValueError(msg)
 
         if fft:
-            self.features = _get_FFT_data(self.features, fft_bin=dim)
+            self.features = _get_FFT_data(self.features, fft_bin=self.dim)
         else:
             # fix each flow to the same feature dimension (cut off the flow or append 0 to it)
-            self.features = [v[:dim] if len(v) > dim else v + [0] * (dim - len(v)) for v in self.features]
+            self.features = [v[:self.dim] if len(v) > self.dim else v + [0] * (self.dim - len(v)) for v in self.features]
 
         if header:
             _headers = _get_header_features(self.flows)
-            h_dim = 8 + dim  # 8 TCP flags
+            h_dim = 8 + self.dim  # 8 TCP flags
             if fft:
                 fft_headers = _get_FFT_data(_headers, fft_bin=h_dim)
                 self.features = [h + f for h, f in zip(fft_headers, self.features)]
