@@ -5,7 +5,8 @@
 The library contains two primary submodules:
 
 * `pparser`: pcap parser\
-Parse pcaps to produce flow features using [Scapy](https://scapy.net/).
+Parse pcaps to produce flow features using [Scapy](https://scapy.net/).\
+(Additional functionality to map pcaps to pandas DataFrames.)
 
 * `ndm`: novelty detection modeling\
 Detect novelties / anomalies, via different models, such as OCSVM.
@@ -54,15 +55,73 @@ For more information, refer to `argcmdr`: [Shell completion](https://github.com/
 
 ## Use
 
+### Simple data manipulation
+
+#### Packet captures to pandas DataFrames
+
+```python
+from netml.pparser.parser import PCAP
+
+pcap = PCAP('data/demo.pcap')
+
+pcap.pcap2pandas()
+
+pdf = pcap.df
+```
+
+#### Packet captures to flow-based features
+
+```python
+from netml.pparser.parser import PCAP
+from netml.utils.tool import dump_data, load_data
+
+pcap = PCAP('data/demo.pcap', flow_ptks_thres=2)
+
+pcap.pcap2flows()
+
+# Extract inter-arrival time features
+pcap.flow2features('IAT', fft=False, header=False)
+
+iat_features = pcap.features
+```
+
+Possible features to pass to `flows2features` include:
+
+* `IAT`: A flow is represented as a timeseries of inter-arrival times between
+  packets, *i.e.*, elapsed time in seconds between any two packets in the flow.
+
+* `STATS`: A flow is represented as a set of statistical quantities. We choose
+  12 of the most common such statistics in the literature: flow duration, number of
+  packets sent per second, number of bytes per second, and various statistics on
+  packet sizes within each flow: mean, standard deviation, inter-quartile range,
+  minimum, and maximum. Finally, the total number of packets and total number
+  of bytes for each flow.
+
+* `SIZE`: A flow is represented as a timeseries of packet sizes in bytes, with one
+  sample per packet.
+
+* `SAMP-NUM`: A flow is partitioned into small intervals of equal length 𝛿𝑡, and
+  the number of packets in each interval is recorded; thus, a flow is
+  represented as a timeseries of packet counts in small time intervals, with one
+  sample per time interval. Here, 𝛿𝑡 might be viewed as a choice of sampling
+  rate for the timeseries, hence the nomenclature.
+
+* `SAMP-SIZE`: A flow is partitioned into time intervals of equal length 𝛿𝑡, and
+  the total packet size (*i.e.*, byte count) in each interval is recorded; thus, a
+  flow is represented as a timeseries of byte counts in small time intervals,
+  with one sample per time interval.
+
 ### Classification of network traffic for outlier detection
 
-Having [trained a model](#training-a-network-traffic-model) to your network traffic, the identification of anomalous traffic is as simple as providing a packet capture (PCAP) file to the `netml classify` command of the CLI:
+Having [trained a model](#training-a-network-traffic-model) to your network traffic,
+the identification of anomalous traffic is as simple as providing a packet capture (PCAP)
+file to the `netml classify` command of the CLI:
 
     netml classify --model=model.dat < unclassified.pcap
 
 Using the Python library, the same might be accomplished, _e.g._:
 
-```python3
+```python
 from netml.pparser.parser import PCAP
 from netml.utils.tool import load_data
 
@@ -118,7 +177,7 @@ To only extract features via the CLI:
 
 Or in Python:
 
-```python3
+```python
 from netml.pparser.parser import PCAP
 from netml.utils.tool import dump_data
 
@@ -155,7 +214,7 @@ To train from already-extracted features via the CLI:
 
 Or in Python:
 
-```python3
+```python
 from sklearn.model_selection import train_test_split
 
 from netml.ndm.model import MODEL
@@ -244,9 +303,12 @@ Development tasks are then managed via [`argcmdr`](https://github.com/dssg/argcm
            --release
 
 
-## Thanks
+## Acknowledgments
 
 `netml` is based on the initial work of the ["Outlier Detection" library `odet`](https://github.com/Learn-Live/odet) 🙌
+
+This work was authored by Kun Yang under the direction of Professor Samory
+Kpotufe at Columbia University.
 
 
 ## Citation
