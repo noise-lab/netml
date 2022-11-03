@@ -1022,6 +1022,7 @@ class PCAP:
                             dnsrr.rrname.decode('utf-8')
                             if isinstance(dnsrr.rrname, bytes)
                             else dnsrr.rrname,
+                            dnsrr.rdata
                         )
                     )
 
