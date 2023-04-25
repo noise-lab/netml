@@ -13,6 +13,15 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
+    #
+    # numba is only a requirement of pyod
+    #
+    # we force an rc only to permit installation under Py311
+    #
+    # (TODO: remove this line once 0.57 is stable and installed on its own)
+    #
+    'numba >= 0.57.0rc1',
+
     'netaddr ~= 0.8.0',
     'numpy ~= 1.23.3',
     'pandas ~= 1.5.0',
