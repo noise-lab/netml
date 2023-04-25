@@ -53,7 +53,7 @@ setup(name='netml',
       long_description_content_type="text/markdown",
       url='https://github.com/chicago-cdac/netml',
       license='Apache 2.0',
-      python_requires='>=3.8.11,<3.11',
+      python_requires='>=3.8.11,<3.12',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=[
