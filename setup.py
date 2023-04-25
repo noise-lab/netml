@@ -53,7 +53,7 @@ setup(name='netml',
       long_description_content_type="text/markdown",
       url='https://github.com/noise-lab/netml',
       license='Apache 2.0',
-      python_requires='>=3.8.11,<3.12',
+      python_requires='>=3.8.11,<4',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=[
