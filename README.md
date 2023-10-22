@@ -90,12 +90,12 @@ Possible features to pass to `flows2features` include:
 * `IAT`: A flow is represented as a timeseries of inter-arrival times between
   packets, *i.e.*, elapsed time in seconds between any two packets in the flow.
 
+[comment]: <> (I think this is a better way to describe the statistics as it corresponds to how the data appears in the code)
 * `STATS`: A flow is represented as a set of statistical quantities. We choose
   12 of the most common such statistics in the literature: flow duration, number of
-  packets sent per second, number of bytes per second, and various statistics on
-  packet sizes within each flow: mean, standard deviation, inter-quartile range,
-  minimum, and maximum. Finally, the total number of packets and total number
-  of bytes for each flow.
+  packets sent per second, number of bytes per second, mean, standard deviation,
+  first quartile, median, third quartile, minimum, maximum total number of packets,
+  and total number of bytes for each flow.
 
 * `SIZE`: A flow is represented as a timeseries of packet sizes in bytes, with one
   sample per packet.
