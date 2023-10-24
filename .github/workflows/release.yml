@@ -25,7 +25,8 @@ jobs:
       - name: Check PyPI token secret
         env:
           PYPI_TOKEN: ${{ secrets.pypi_token }}
-        run: [ -n "$PYPI_TOKEN" ]
+        run: |
+          [ -n "$PYPI_TOKEN" ]
 
       - name: Configure publishing changeset author
         env:
