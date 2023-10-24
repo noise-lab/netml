@@ -141,7 +141,7 @@ def timing(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        verbose = kwargs.pop('verbose', 0)
+        verbose = kwargs.get('verbose', 0)
         start = time.time()
         st = datetime.fromtimestamp(start).strftime('%Y-%m-%d %H:%M:%S')
         if verbose > 0:
