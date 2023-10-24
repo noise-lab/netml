@@ -100,13 +100,13 @@ Possible features to pass to `flows2features` include:
 * `SIZE`: A flow is represented as a timeseries of packet sizes in bytes, with one
   sample per packet.
 
-* `SAMP-NUM`: A flow is partitioned into small intervals of equal length 𝛿𝑡, and
+* `SAMP_NUM`: A flow is partitioned into small intervals of equal length 𝛿𝑡, and
   the number of packets in each interval is recorded; thus, a flow is
   represented as a timeseries of packet counts in small time intervals, with one
   sample per time interval. Here, 𝛿𝑡 might be viewed as a choice of sampling
   rate for the timeseries, hence the nomenclature.
 
-* `SAMP-SIZE`: A flow is partitioned into time intervals of equal length 𝛿𝑡, and
+* `SAMP_SIZE`: A flow is partitioned into time intervals of equal length 𝛿𝑡, and
   the total packet size (*i.e.*, byte count) in each interval is recorded; thus, a
   flow is represented as a timeseries of byte counts in small time intervals,
   with one sample per time interval.
