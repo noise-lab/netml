@@ -151,7 +151,7 @@ def timing(func):
         ed = datetime.fromtimestamp(end).strftime('%Y-%m-%d %H:%M:%S')
         tot_time = (end - start) / 60
         tot_time = float(f'{tot_time:.4f}')
-        if verbose > 0:
+        if verbose:
             print(f'\'{func.__name__}()\' ends at {ed} and takes {tot_time} mins.')
         func.tot_time = tot_time  # add new variable to func
         return result, tot_time
