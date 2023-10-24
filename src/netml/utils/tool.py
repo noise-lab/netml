@@ -141,15 +141,18 @@ def timing(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
+        verbose = kwargs.get('verbose', 0)
         start = time.time()
         st = datetime.fromtimestamp(start).strftime('%Y-%m-%d %H:%M:%S')
-        print(f'\'{func.__name__}()\' starts at {st}')
+        if verbose:
+            print(f'\'{func.__name__}()\' starts at {st}')
         result = func(*args, **kwargs)
         end = time.time()
         ed = datetime.fromtimestamp(end).strftime('%Y-%m-%d %H:%M:%S')
         tot_time = (end - start) / 60
         tot_time = float(f'{tot_time:.4f}')
-        print(f'\'{func.__name__}()\' ends at {ed} and takes {tot_time} mins.')
+        if verbose:
+            print(f'\'{func.__name__}()\' ends at {ed} and takes {tot_time} mins.')
         func.tot_time = tot_time  # add new variable to func
         return result, tot_time
 

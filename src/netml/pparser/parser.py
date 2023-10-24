@@ -77,7 +77,7 @@ def _get_flow_duration(pkts):
     return flow_duration
 
 
-def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=600, verbose=1):
+def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=600, verbose=0):
     """Extract flows. Only keep TCP and UDP flows, others are discarded.
 
     Parameters
@@ -96,7 +96,7 @@ def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=60
     ucp_timeout: int (default is 600s)
         a timeout is to split flow
 
-    verbose: int (default is 1)
+    verbose: int (default is 0)
         a print level is to control what information should be printed according to the given value.
         The higher the value is, the more info is printed.
 
@@ -206,7 +206,7 @@ def _pcap2flows(pcap_file, flow_pkts_thres=2, *, tcp_timeout=600, udp_timeout=60
     return new_flows
 
 
-def _flows2subflows(flows, interval=10, *, flow_pkts_thres=2, verbose=1):
+def _flows2subflows(flows, interval=10, *, flow_pkts_thres=2, verbose=0):
     """Split flows to subflows by interval
 
     Parameters
@@ -222,7 +222,7 @@ def _flows2subflows(flows, interval=10, *, flow_pkts_thres=2, verbose=1):
         and which one should be discarded. The default value is 2, i.e., all the flows which have less than 2 packets
         are discarded. It must be >= 2.
 
-    verbose: int (default is 1)
+    verbose: int (default is 0)
         a print level is to control what information should be printed according to the given value.
         The higher the value is, the more info is printed.
 
@@ -469,7 +469,7 @@ def _get_STATS(flows):
     return features, fids
 
 
-def _get_SAMP(flows, sampling_feature='SAMP_NUM', sampling_rate=0.1, verbose=1):
+def _get_SAMP(flows, sampling_feature='SAMP_NUM', sampling_rate=0.1, verbose=0):
     """Extract sampling IATs from subwindows obtained by splitting each flow.
 
     For example, sampling_feature = 'SAMP_NUM'
@@ -654,7 +654,7 @@ def _get_FFT_data(features, fft_bin='', fft_part='real'):
 
 class PCAP:
 
-    def __init__(self, pcap_file, *, flow_ptks_thres=2, verbose=10, random_state=42):
+    def __init__(self, pcap_file, *, flow_ptks_thres=2, verbose=0, random_state=42):
         """PCAP includes all processing functions of pcaps, such as pcap2flows, flow2features, and label_flows .
 
         Parameters
@@ -667,7 +667,7 @@ class PCAP:
             and which one should be discarded. The default value is 2, i.e., all the flows which have less than 2 packets
             are discarded. It must be >= 2.
 
-        verbose: int (default is 1)
+        verbose: int (default is 0)
             a print level is to control what information should be printed according to the given value.
             The higher the value is, the more info is printed.
 
