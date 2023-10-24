@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: type of release
+        required: true
+        type: choice
+        options: [major, minor, patch]
+      tag-message:
+        description: description of release
+        required: false
+
+env:
+  GIT_COMMITTER_NAME: github-actions[bot]
+  GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # "secrets" not (yet) available to "if" context (cannot check values in "jobs.release.if")
+      - name: Check PyPI token secret
+        env:
+          PYPI_TOKEN: ${{ secrets.pypi_token }}
+        run: [ -n "$PYPI_TOKEN" ]
+
+      - name: Configure publishing changeset author
+        env:
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          USER="$(
+            gh api users/"$SENDER"
+          )"
+
+          NAME="$(echo "$USER" | jq -r .name)"
+
+          if [ -n "$NAME" ]
+          then
+            echo "GIT_AUTHOR_NAME=$NAME" >> $GITHUB_ENV
+          else
+            echo "::error::Author name empty for sender $SENDER"
+            exit 1
+          fi
+
+          EMAIL="$(echo "$USER" | jq -r .email)"
+
+          if [ -n "$EMAIL" ]
+          then
+            echo "GIT_AUTHOR_EMAIL=$EMAIL" >> $GITHUB_ENV
+          else
+            echo "::error::Author email empty for sender $SENDER"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install management dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install argcmdr==0.13.1
+
+      - name: Bump version, build & release to PyPI
+        run: manage --show version --message "$TAG_MESSAGE" --build --release $RELEASE_TYPE
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+          # don't attempt to handle proper interpolation of message in-shell
+          RELEASE_TYPE: ${{ github.event.inputs.release-type }}
+          TAG_MESSAGE: ${{ github.event.inputs.tag-message }}
+
+      - name: Discover tag
+        id: read-tag
+        run: |
+          LAST_TAG="$(git tag --list --sort=version:refname | tail -n 1)"
+          echo "name=$LAST_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Check release
+        env:
+          TAG: ${{ steps.read-tag.outputs.name }}
+        run: |
+          while ! pip index versions netml | grep $TAG; do
+            echo "waiting on PyPI to publish netml==$TAG ..."
+            sleep 2
+          done
+
+          echo "### Library published :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See [netml==$TAG](https://pypi.org/project/netml/$TAG/)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Push version bump & tag
+        run: |
+          git push
+          git push --tags
+
+          echo "### Version bumped :arrow_heading_up:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```console' >> $GITHUB_STEP_SUMMARY
+          git show --format=full --no-patch >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Create tagged release
+        env:
+          TAG: ${{ steps.read-tag.outputs.name }}
+        run: |
+          TARGET=$(git show --format=%H --no-patch)
+
+          URL="$(
+            gh release create $TAG --target $TARGET --generate-notes
+          )"
+
+          echo "### Release created :octocat:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See [netml v$TAG]($URL)" >> $GITHUB_STEP_SUMMARY
