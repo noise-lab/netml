@@ -144,7 +144,7 @@ def timing(func):
         verbose = kwargs.get('verbose', 0)
         start = time.time()
         st = datetime.fromtimestamp(start).strftime('%Y-%m-%d %H:%M:%S')
-        if verbose > 0:
+        if verbose:
             print(f'\'{func.__name__}()\' starts at {st}')
         result = func(*args, **kwargs)
         end = time.time()
