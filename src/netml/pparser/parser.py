@@ -1018,10 +1018,15 @@ class PCAP:
                 if (dnsrr := pkt.getlayer(DNSRR)) is not None:
                     pkt_dict.update(
                         is_dns=True,
-                        dns_resp=(
+                        dns_query=(
                             dnsrr.rrname.decode('utf-8')
                             if isinstance(dnsrr.rrname, bytes)
                             else dnsrr.rrname,
+                        ),
+                        dns_resp=(
+                            dnsrr.rdata.decode('utf-8')
+                            if isinstance(dnsrr.rdata, bytes)
+                            else dnsrr.rdata,
                         )
                     )
 

@@ -26,6 +26,9 @@ def main(pcap_file=PCAP_FILE, label_file=LABEL_FILE):
         random_state=RANDOM_STATE,
     )
 
+    pp.pcap2pandas()
+
+    pp.df.to_csv(f'{EXAMPLES_PATH}/data/demo_pandas.csv')
     # extract flows from pcap
     pp.pcap2flows(q_interval=0.9)
 
