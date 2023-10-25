@@ -428,8 +428,8 @@ def _get_IAT_SIZE(flows):
 
 
 def _get_STATS(flows):
-    """get basic stats features, which includes duration, pkts_rate, bytes_rate, mean,
-    median, std, q1, q2, q3, min, and max.
+    """get basic stats features, which is: [duration, pkts_rate, bytes_rate, mean,
+    std, q1, median, q3, min, max, num_pkts, and num_bytes].
 
     Parameters
     ----------
@@ -443,7 +443,9 @@ def _get_STATS(flows):
         each value is five-tuple
     """
 
-    features = []
+    features = [] # could potential initialize the list to : 
+    # ["duration", "pkts_rate", "bytes_rate", "mean", "std", "q1", "median", "q3", "min", "max", "num_pkts", "num_bytes"]
+    # so that it is clear to users what each term means
     fids = []
     for fid, pkts in flows:
         sizes = [len(pkt) for pkt in pkts]
