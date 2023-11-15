@@ -987,6 +987,7 @@ class PCAP:
                     'port_src': None,
                     'is_dns': False,
                     'dns_query': None,
+                    'dns_transaction_id': None,
                     'dns_resp': None,
                 }
 
@@ -1004,6 +1005,11 @@ class PCAP:
                     pkt_dict['protocol'] = 'UDP'
                 elif ICMP in pkt:
                     pkt_dict['protocol'] = 'ICMP'
+
+                if DNS in pkt:
+                    # the transaction ID is stored in the `.id`
+                    # attribute of packet's DNS layer
+                    pkt_dict['dns_transaction_id'] = pkt[DNS].id
 
                 if (dnsqr := pkt.getlayer(DNSQR)) is not None:
                     pkt_dict.update(
@@ -1062,6 +1068,10 @@ class PCAP:
             lambda x: None if x is None else int(netaddr.EUI(x)))
 
         self.df['time_normed'] = self.df['time'].apply(lambda x: x - self.df.iloc[0]['time'])
+
+        # cast all transaction ID's to integers
+        # self.df['dns_transaction_id'] = self.df['dns_transaction_id'].apply(
+        #     lambda x: None if x is None else int(x))
 
         self.df.sort_index(axis=1, inplace=True)
 
