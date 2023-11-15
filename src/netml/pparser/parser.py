@@ -965,6 +965,7 @@ class PCAP:
               "port_src"  : source port
               "port_dst"  : destination port
               "is_dns"    : True if packet is DNS packet, else False
+              "dns_transaction_id" : floating point DNS transaction ID
               "dns_query" : string DNS query
               "dns_resp"  : string DNS response
 
@@ -987,8 +988,8 @@ class PCAP:
                     'port_src': None,
                     'is_dns': False,
                     'dns_query': None,
-                    'dns_transaction_id': None,
                     'dns_resp': None,
+                    'dns_transaction_id': None,
                 }
 
                 if IP in pkt:
@@ -1009,7 +1010,7 @@ class PCAP:
                 if DNS in pkt:
                     # the transaction ID is stored in the `.id`
                     # attribute of packet's DNS layer
-                    pkt_dict['dns_transaction_id'] = pkt[DNS].id
+                    pkt_dict['dns_transaction_id'] = int(pkt[DNS].id)
 
                 if (dnsqr := pkt.getlayer(DNSQR)) is not None:
                     pkt_dict.update(
@@ -1070,8 +1071,9 @@ class PCAP:
         self.df['time_normed'] = self.df['time'].apply(lambda x: x - self.df.iloc[0]['time'])
 
         # cast all transaction ID's to integers
-        # self.df['dns_transaction_id'] = self.df['dns_transaction_id'].apply(
-        #     lambda x: None if x is None else int(x))
+        # Int64Dtype is pandas optional integer type
+        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Int64Dtype.html
+        self.df['dns_transaction_id'] = self.df['dns_transaction_id'].astype(pd.Int64Dtype())
 
         self.df.sort_index(axis=1, inplace=True)
 
