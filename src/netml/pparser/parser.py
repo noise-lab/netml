@@ -1011,6 +1011,7 @@ class PCAP:
                     # the transaction ID is stored in the `.id`
                     # attribute of packet's DNS layer
                     pkt_dict['dns_transaction_id'] = int(pkt[DNS].id)
+                    pkt_dict['dns_record_qtype'] = pkt[DNS].qd.qtype
 
                 if (dnsqr := pkt.getlayer(DNSQR)) is not None:
                     pkt_dict.update(
