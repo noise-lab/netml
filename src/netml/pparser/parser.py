@@ -25,6 +25,168 @@ from scapy.layers.inet import IP, TCP, UDP
 from netml.utils.tool import data_info, timing
 
 
+
+
+def _match_dns_record_to_range(numeric_record_qtype):
+    """
+    Given an integer DNS record qtype between 0 and 65,535, 
+    returns the string representation of that qtype if it is in 
+    unassigned, reserved, and private use ranges as defined by IANA
+    according to:
+        https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml
+
+    Input:
+        int: dns numeric qtype, from 0-65535
+
+    Output:
+        str or None: a string of either:
+                        "RESERVED"
+                        "UNASSIGNED"
+                        "PRIVATE-USE"
+                     based on what range the numbers falls into
+                     or None, if the qtype int is none of the above 
+                     (like a normal DNS record type, ie: 1 -> A, 28 -> AAAA)
+    """
+    RESERVED = "RESERVED"
+    UNASSIGNED = "UNASSIGNED"
+    PRIVATE_USE = "PRIVATE-USE"
+
+    # check if reserved:
+    record_string = None
+    if numeric_record_qtype == 0 or numeric_record_qtype == 65535:
+        record_string = RESERVED
+
+    # check if private use
+    if numeric_record_qtype in range(65280,65535):
+        record_string = PRIVATE_USE
+
+    # check if unassigned
+    # this has many conditions, here are all ranges of unassigned DNS record qtype numbers
+    # Unassigned : 66-98 
+    #          110-248 
+    #          262-32767
+    #          32770-65279
+    if numeric_record_qtype in range(66,99) or numeric_record_qtype in range(110,249) or numeric_record_qtype in range(262,32768) or numeric_record_qtype in range(32770,65280):
+        record_string = UNASSIGNED
+
+    return record_string
+
+def _dns_record_qtype_to_string(numeric_record_qtype):
+    """
+    Given an integer between 0 and 65,535, returns the string name of the DNS record type
+    according to:
+        https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml
+
+    """
+    DNS_QTYPE_TO_RECORD_STRING = { 1 : "A",
+                                 2 : "NS",
+                                 3 : "MD",
+                                 4 : "MF",
+                                 5 : "CNAME",
+                                 6 : "SOA",
+                                 7 : "MB",
+                                 8 : "MG",
+                                 9 : "MR",
+                                 10 : "NULL",
+                                 11 : "WKS",
+                                 12 : "PTR",
+                                 13 : "HINFO",
+                                 14 : "MINFO",
+                                 15 : "MX",
+                                 16 : "TXT",
+                                 17 : "RP",
+                                 18 : "AFSDB",
+                                 19 : "X25",
+                                 20 : "ISDN",
+                                 21 : "RT",
+                                 22 : "NSAP",
+                                 23 : "NSAP-PTR",
+                                 24 : "SIG",
+                                 25 : "KEY",
+                                 26 : "PX",
+                                 27 : "GPOS",
+                                 28 : "AAAA",
+                                 29 : "LOC",
+                                 30 : "NXT",
+                                 31 : "EID",
+                                 32 : "NIMLOC",
+                                 33 : "SRV",
+                                 34 : "ATMA",
+                                 35 : "NAPTR",
+                                 36 : "KX",
+                                 37 : "CERT",
+                                 38 : "A6",
+                                 39 : "DNAME",
+                                 40 : "SINK",
+                                 41 : "OPT",
+                                 42 : "APL",
+                                 43 : "DS",
+                                 44 : "SSHFP",
+                                 45 : "IPSECKEY",
+                                 46 : "RRSIG",
+                                 47 : "NSEC",
+                                 48 : "DNSKEY",
+                                 49 : "DHCID",
+                                 50 : "NSEC3",
+                                 51 : "NSEC3PARAM",
+                                 52 : "TLSA",
+                                 53 : "SMIMEA",
+                                 54 : "Unassigned",
+                                 55 : "HIP",
+                                 56 : "NINFO",
+                                 57 : "RKEY",
+                                 58 : "TALINK",
+                                 59 : "CDS",
+                                 60 : "CDNSKEY",
+                                 61 : "OPENPGPKEY",
+                                 62 : "CSYNC",
+                                 63 : "ZONEMD",
+                                 64 : "SVCB",
+                                 65 : "HTTPS",
+                                 99 : "SPF",
+                                 100 : "UINFO",
+                                 101 : "UID",
+                                 102 : "GID",
+                                 103 : "UNSPEC",
+                                 104 : "NID",
+                                 105 : "L32",
+                                 106 : "L64",
+                                 107 : "LP",
+                                 108 : "EUI48",
+                                 109 : "EUI64",
+                                 249 : "TKEY",
+                                 250 : "TSIG",
+                                 251 : "IXFR",
+                                 252 : "AXFR",
+                                 253 : "MAILB",
+                                 254 : "MAILA",
+                                 255 : "*",
+                                 256 : "URI",
+                                 257 : "CAA",
+                                 258 : "AVC",
+                                 259 : "DOA",
+                                 260 : "AMTRELAY",
+                                 261 : "RESINFO",
+                                 32768 : "TA",
+                                 32769 : "DLV",
+                                }
+
+    record_type = DNS_QTYPE_TO_RECORD_STRING.get(numeric_record_qtype,None)
+
+    
+    # if it did not hit the above disctionary, that means the DNS record falls into 
+    # some range as defined by IANA
+    if record_type is None:
+        # actually get the string representation of the range
+        record_type = _match_dns_record_to_range(numeric_record_qtype)
+
+    # at this point, any value between 0 and 65535 should've been appropriately matched
+    # and thus the string assigned a value
+    if record_type is None:
+        raise ValueError(f"Record qtype: [{numeric_record_qtype}] type did not match any DNS record")
+
+    return record_type
+
 def _get_fid(pkt):
     """Extract fid (five-tuple) from a packet: only focus on IPv4
     Parameters
@@ -1011,7 +1173,9 @@ class PCAP:
                     # the transaction ID is stored in the `.id`
                     # attribute of packet's DNS layer
                     pkt_dict['dns_transaction_id'] = int(pkt[DNS].id)
-                    pkt_dict['dns_record_qtype'] = pkt[DNS].qd.qtype
+                    numeric_record_qtype = pkt[DNS].qd.qtype
+                    pkt_dict['dns_record_qtype'] = _dns_record_qtype_to_string(numeric_record_qtype)
+
 
                 if (dnsqr := pkt.getlayer(DNSQR)) is not None:
                     pkt_dict.update(
