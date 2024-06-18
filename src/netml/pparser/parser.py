@@ -943,6 +943,22 @@ class PCAP:
         _, tot_time = self._label_flows(label_file, label)
         self.label_flows.__dict__['tot_time'] = tot_time
 
+    _pcap_columns = (
+        'time',
+        'datetime',
+        'length',
+        'mac_dst',
+        'mac_src',
+        'ip_dst',
+        'ip_src',
+        'protocol',
+        'port_dst',
+        'port_src',
+        'is_dns',
+        'dns_query',
+        'dns_resp',
+    )
+
     def _iter_pcap_dict(self):
         """Stream extracted dict mappings from PCAP file.
 
@@ -971,24 +987,18 @@ class PCAP:
         """
         with PcapReader(self.pcap_file) as pcap_reader:
             for pkt in pcap_reader:
-                if Ether not in pkt:
-                    continue
+                pkt_dict = dict.fromkeys(self._pcap_columns)
 
-                pkt_dict = {
-                    'time': pkt.time,
-                    'datetime': datetime.fromtimestamp(int(pkt.time)),
-                    'length': len(pkt),
-                    'mac_dst': pkt[Ether].dst,
-                    'mac_src': pkt[Ether].src,
-                    'ip_dst': None,
-                    'ip_src': None,
-                    'protocol': None,
-                    'port_dst': None,
-                    'port_src': None,
-                    'is_dns': False,
-                    'dns_query': None,
-                    'dns_resp': None,
-                }
+                pkt_dict.update(
+                    time=pkt.time,
+                    datetime=datetime.fromtimestamp(int(pkt.time)),
+                    length=len(pkt),
+                    is_dns=False,
+                )
+
+                if Ether in pkt:
+                    pkt_dict['mac_dst'] = pkt[Ether].dst
+                    pkt_dict['mac_src'] = pkt[Ether].src
 
                 if IP in pkt:
                     pkt_dict['ip_dst'] = pkt[IP].dst
@@ -1041,11 +1051,11 @@ class PCAP:
 
         Returns:
           DataFrame with one packet per row.
-            column names are the keys from pcap_to_dict plus
+            column names are those of _pcap_columns plus
             'ip_dst_int', 'ip_src_int', 'mac_dst_int', 'mac_dst_int'
 
         """
-        self.df = pd.DataFrame(self._iter_pcap_dict())
+        self.df = pd.DataFrame(self._iter_pcap_dict(), columns=self._pcap_columns)
 
         self.df['datetime'] = pd.to_datetime(self.df['datetime'])
 
