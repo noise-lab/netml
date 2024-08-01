@@ -47,7 +47,7 @@ EXTRAS_REQUIRE = {
 
 
 setup(name='netml',
-      version='0.7.0',
+      version='0.7.1',
       description='Feature Extraction and Machine Learning from Network Traffic Traces',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
