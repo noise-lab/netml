@@ -37,8 +37,8 @@ EXTRAS_REQUIRE = {
 
     'dev': _CLI_REQUIRES + _TESTS_REQUIRE + [
         'bumpversion==0.6.0',
-        'twine==4.0.1',
-        'wheel==0.37.1',
+        'twine==5.1.1',
+        'wheel==0.43.0',
     ],
 
     # (as yet) unused:
