@@ -36,7 +36,7 @@ EXTRAS_REQUIRE = {
     'cli': _CLI_REQUIRES,
 
     'dev': _CLI_REQUIRES + _TESTS_REQUIRE + [
-        'bumpversion==0.6.0',
+        'bumpversion==0.7.0',
         'twine==5.1.1',
         'wheel==0.43.0',
     ],
@@ -47,7 +47,7 @@ EXTRAS_REQUIRE = {
 
 
 setup(name='netml',
-      version='0.6.0',
+      version='0.7.0',
       description='Feature Extraction and Machine Learning from Network Traffic Traces',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
