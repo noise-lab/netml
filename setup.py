@@ -13,27 +13,18 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
-    #
-    # numba is only a requirement of pyod
-    #
-    # we force an rc only to permit installation under Py311
-    #
-    # (TODO: remove this line once 0.57 is stable and installed on its own)
-    #
-    'numba >= 0.57.0rc1',
-
-    'netaddr ~= 0.8.0',
-    'numpy ~= 1.23.3',
-    'pandas ~= 1.5.0',
-    'pyod ~= 1.0.5',
-    'scapy ~= 2.4.5',
-    'scikit-learn ~= 1.1.2',
+    'netaddr ~= 1.3.0',
+    'numpy ~= 2.0.1',
+    'pandas ~= 2.2.2',
+    'pyod ~= 2.0.1',
+    'scapy ~= 2.5.0',
+    'scikit-learn ~= 1.5.1',
 ]
 
 _CLI_REQUIRES = [
     'argcmdr==0.13.1',
     'argparse-formatter==1.4',
-    'PyYAML==6.0',
+    'PyYAML==6.0.1',
     'terminaltables==3.1.10',
 ]
 
@@ -72,10 +63,10 @@ setup(name='netml',
           'Intended Audience :: Science/Research',
           'License :: OSI Approved :: Apache Software License',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10',
           'Programming Language :: Python :: 3.11',
+          'Programming Language :: Python :: 3.12',
           'Topic :: Software Development :: Libraries',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
