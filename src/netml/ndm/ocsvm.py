@@ -12,7 +12,7 @@ class OCSVM(OneClassSVM):
 
     def __init__(self, kernel='rbf', degree=3, gamma='scale',
                  coef0=0.0, tol=1e-3, nu=0.5, shrinking=True, cache_size=200,
-                 verbose=False, max_iter=-1, random_state=100):
+                 verbose=False, max_iter=-1, **kwargs):
         """One Class SVM (OCSVM)
 
         Parameters
@@ -49,10 +49,13 @@ class OCSVM(OneClassSVM):
 
         verbose: bool (default is False)
             Enable verbose output.
-
-        random_state: int (default is 42)
-
         """
+
+        if "random_state" in kwargs and verbose > 5:
+            print(
+                "Warning: argument 'random_state' passed to OCSVM has no effect."
+            )
+
         super(OCSVM, self).__init__(
             kernel=kernel,
             degree=degree,
@@ -66,7 +69,6 @@ class OCSVM(OneClassSVM):
             max_iter=max_iter,
         )
 
-        self.random_state = random_state
         self.verbose = verbose
 
     # override decision_function. because test and grid_search will use decision_function first

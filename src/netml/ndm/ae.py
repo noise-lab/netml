@@ -71,7 +71,7 @@ class AE(BaseDetector):
                  loss='mse',
                  dropout_rate=0.2,
                  l2_regularizer=0.1, validation_size=0.1,
-                 verbose=1, random_state=42, contamination=0.1, hid_dim=16, lat_dim=8):
+                 verbose=1, contamination=0.1, hid_dim=16, lat_dim=8, **kwargs):
         """AutoEncoder
 
         Parameters
@@ -109,9 +109,7 @@ class AE(BaseDetector):
         verbose: int (default is 1)
             A print level is to control what information should be printed according to the given value.
             The higher the value is, the more info is printed.
-
-        random_state: int (default is 42)
-
+        
         """
         self.epochs = epochs
         self.batch_size = batch_size
@@ -120,13 +118,17 @@ class AE(BaseDetector):
         self.l2_regularizer = l2_regularizer
         self.validation_size = validation_size
         self.verbose = verbose
-        self.random_state = random_state
         self.lr = lr
         self.contamination = contamination
         self.hid_dim = hid_dim
         self.lat_dim = lat_dim
 
         check_parameter(dropout_rate, 0, 1, param_name='dropout_rate', include_left=True)
+
+        if "random_state" in kwargs and verbose > 5:
+            print(
+                "Warning: 'random_state' passed to AutoEncoder. Use torch.manual_seed() instead."
+            )
 
         if self.loss == 'mse' or (not self.loss):
             self.criterion = nn.MSELoss()

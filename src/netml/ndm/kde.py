@@ -16,7 +16,7 @@ class KDE(KernelDensity, BaseDetector):
 
     def __init__(self, bandwidth=1.0, algorithm='auto',
                  kernel='gaussian', metric="euclidean", atol=0, rtol=0, contamination=0.1,
-                 breadth_first=True, leaf_size=40, metric_params=None, random_state=42):
+                 breadth_first=True, leaf_size=40, metric_params=None, verbose=0, **kwargs):
         """Kernel density estimation (KDE)
         Parameters
         ----------
@@ -63,7 +63,11 @@ class KDE(KernelDensity, BaseDetector):
         self.leaf_size = leaf_size
         self.metric_params = metric_params
         self.contamination = contamination
-        self.random_state = random_state
+
+        if "random_state" in kwargs and verbose > 5:
+            print(
+                "Warning: argument 'random_state' passed to KDE has no effect."
+            )
 
         # run the choose algorithm code so that exceptions will happen here
         # we're using clone() in the GenerativeBayes classifier,
