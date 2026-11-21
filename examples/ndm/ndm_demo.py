@@ -33,7 +33,7 @@ def generate_model(model_name='GMM'):
 
     if model_name == 'OCSVM':
         from netml.ndm.ocsvm import OCSVM
-        model = OCSVM(kernel='rbf', nu=0.5, random_state=RANDOM_STATE)
+        model = OCSVM(kernel='rbf', nu=0.5)
     elif model_name == 'GMM':
         from netml.ndm.gmm import GMM
         model = GMM(n_components=2, covariance_type='full', random_state=RANDOM_STATE)
@@ -45,10 +45,10 @@ def generate_model(model_name='GMM'):
         model = PCA(n_components=1, random_state=RANDOM_STATE)
     elif model_name == 'KDE':
         from netml.ndm.kde import KDE
-        model = KDE(kernel='gaussian', bandwidth=1.0, random_state=RANDOM_STATE)
+        model = KDE(kernel='gaussian', bandwidth=1.0)
     elif model_name == 'AE':
         from netml.ndm.ae import AE
-        model = AE(epochs=100, batch_size=32, random_state=RANDOM_STATE)
+        model = AE(epochs=100, batch_size=32)  # seed PyTorch with torch.manual_seed() for reproducibility
     else:
         msg = f'{model_name} is not implemented yet!'
         raise NotImplementedError(msg)
@@ -72,7 +72,7 @@ def main(data_file=DATA_FILE):
     # create detection model
     model = generate_model(model_name)
 
-    ndm = MODEL(model, score_metric='auc', verbose=10, random_state=RANDOM_STATE)
+    ndm = MODEL(model, score_metric='auc', verbose=10)
 
     # learned the model from the train set
     ndm.train(X_train)

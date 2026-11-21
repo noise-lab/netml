@@ -17,6 +17,7 @@ from pyod.models.base import BaseDetector
 from pyod.utils.stat_models import pairwise_distances_no_broadcast
 from pyod.utils.utility import check_parameter
 from sklearn.utils import check_array
+from netml.utils.params import check_ignored_random_state
 
 
 class _AutoEncoder(nn.Module):
@@ -125,10 +126,7 @@ class AE(BaseDetector):
 
         check_parameter(dropout_rate, 0, 1, param_name='dropout_rate', include_left=True)
 
-        if "random_state" in kwargs and verbose > 5:
-            print(
-                "Warning: 'random_state' passed to AutoEncoder. Use torch.manual_seed() instead."
-            )
+        check_ignored_random_state(kwargs, "AE")
 
         if self.loss == 'mse' or (not self.loss):
             self.criterion = nn.MSELoss()

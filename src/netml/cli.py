@@ -547,16 +547,17 @@ class Learn(Command):
             ) from exc
 
         # create detection model
-        model = model_class(
-            random_state=self.args.random_state,
-            **params
-        )
+        # pass random_state only to detectors that use it (IF, GMM, PCA);
+        # the others accept it for compatibility but warn that it is ignored
+        if 'random_state' in inspect.signature(model_class).parameters:
+            params = dict(params, random_state=self.args.random_state)
+
+        model = model_class(**params)
         model.name = self.args.algorithm  # FIXME
         ndm = netml.ndm.model.MODEL(
             model,
             score_metric='auc',
             verbose=self.args.verbosity,
-            random_state=self.args.random_state,
         )
 
         # train the model from the train set

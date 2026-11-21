@@ -6,6 +6,7 @@
 # License: xxx
 
 from sklearn.svm import OneClassSVM
+from netml.utils.params import check_ignored_random_state
 
 
 class OCSVM(OneClassSVM):
@@ -51,10 +52,7 @@ class OCSVM(OneClassSVM):
             Enable verbose output.
         """
 
-        if "random_state" in kwargs and verbose > 5:
-            print(
-                "Warning: argument 'random_state' passed to OCSVM has no effect."
-            )
+        check_ignored_random_state(kwargs, "OCSVM")
 
         super(OCSVM, self).__init__(
             kernel=kernel,

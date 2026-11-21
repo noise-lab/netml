@@ -5,6 +5,8 @@
 #
 # License: xxx
 
+import warnings
+
 from sklearn import metrics
 from sklearn.metrics import roc_curve
 
@@ -40,10 +42,13 @@ class MODEL:
         # store all data generated during training and testing the model.
         self.history = {}
 
-        if "random_state" in kwargs:
-            self.random_state = kwargs["random_state"]
-            if verbose > 5:
-                print("Warning: setting random_state for a model wrapper doesn't affect the underlying predictions.")
+        unexpected = set(kwargs) - {'random_state'}
+        if unexpected:
+            raise TypeError(f"MODEL() got unexpected keyword argument(s): {', '.join(sorted(unexpected))}")
+        if 'random_state' in kwargs:
+            self.random_state = kwargs['random_state']
+            warnings.warn("'random_state' has no effect on MODEL; set it on the detector "
+                          "(where supported) instead. It is ignored.", UserWarning, stacklevel=2)
 
     @timing
     def _train(self, X_train, y_train=None):
