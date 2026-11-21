@@ -157,6 +157,7 @@ A model may be trained for outlier detection as simply as providing a PCAP file 
 * `--algorithm`: selection of model-training algorithms, such as One-Class Support Vector Machine (OCSVM), Kernel Density Estimation (KDE), Isolation Forest (IF) and Autoencoder (AE)
 * `--param`: customization of model hyperparameters via YAML/JSON
 * `--label`, `--pcap-normal` & `--pcap-abnormal`: optional labeling of traffic to enable post-training testing of the model
+* `--feature-dim`: the number of features per flow (see [Feature width across captures](#feature-width-across-captures)); by default it is derived from the first pcap and applied to every other pcap, and `classify` uses the width the model was trained on
 
 In the below examples, an OCSVM model is trained by demo traffic included in the library, and tested by labels in a CSV file, (both provided by the University of New Brunswick's [Intrusion Detection Systems dataset](https://www.unb.ca/cic/datasets/ids-2017.html)).
 
@@ -203,6 +204,35 @@ dump_data((pcap.features, pcap.labels), out_file='out/IAT-features.dat')
 # stats
 print(pcap.features.shape, pcap.pcap2flows.tot_time, pcap.flow2features.tot_time)
 ```
+
+#### Feature width across captures
+
+Variable-length feature types (`IAT`, `SIZE`, `IAT_SIZE`, `SAMP_NUM`, `SAMP_SIZE`, and
+their `FFT-` variants) are cut off or zero-padded to a fixed number of features per flow,
+so every row of `pcap.features` has the same width. By default that width is derived from
+the capture's own flows: the `q_interval` quantile of packets per flow (minus one for the
+IAT-based types). `STATS` features are always 12 wide.
+
+Two captures can therefore produce feature matrices of different widths. To combine them
+(for example, normal and anomalous traffic in one training set) or to train on one capture
+and test on another, give every capture the same width with `dim`, usually the width of the
+first or training capture, which `flow2features` records as `pcap.dim`:
+
+```python
+train = PCAP('normal.pcap', flow_ptks_thres=2)
+train.pcap2flows(q_interval=0.9)
+train.flow2features('IAT')          # width derived from normal.pcap
+
+test = PCAP('anomalous.pcap', flow_ptks_thres=2)
+test.pcap2flows(q_interval=0.9)
+test.flow2features('IAT', dim=train.dim)   # same width as the training features
+
+assert train.features.shape[1] == test.features.shape[1]
+```
+
+The CLI does this for you: `netml learn` with several `--pcap` (or `--pcap-normal` and
+`--pcap-abnormal`) files uses the first pcap's width for all of them, and `netml classify`
+extracts at the width the model was trained on. `--feature-dim` sets the width explicitly.
 
 #### Features to model
 

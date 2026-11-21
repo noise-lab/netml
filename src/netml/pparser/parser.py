@@ -767,7 +767,7 @@ class PCAP:
         self.pcap2flows.__dict__['tot_time'] = tot_time
 
     @timing
-    def _flow2features(self, feat_type='IAT', *, fft=False, header=False):
+    def _flow2features(self, feat_type='IAT', *, fft=False, header=False, dim=None):
         """Extract features from each flow according to feat_type, fft and header.
 
         Parameters
@@ -781,6 +781,19 @@ class PCAP:
         header: boolean (default is False)
             if we need header+features
 
+        dim: int or None (default is None)
+            the number of features per flow (before any header features). Each
+            flow's feature vector is cut off or zero-padded to this length.
+
+            If None, the length is derived from this capture's own flows: the
+            ``q_interval`` quantile of packets per flow (minus one for IAT-based
+            types; twice that, minus one, for IAT_SIZE). Two captures can then
+            produce different widths, so to combine or compare feature matrices
+            from several captures (e.g. train on one pcap, test on another), pass
+            the same ``dim`` to each, typically the ``dim`` of the first or
+            training capture (available afterwards as ``pcap.dim``). STATS
+            features are always 12 wide; any other ``dim`` is an error.
+
         Returns
         -------
             self
@@ -789,34 +802,41 @@ class PCAP:
 
         num_pkts = [len(pkts) for fid, pkts in self.flows]
 
-        dim = int(np.floor(np.quantile(num_pkts, self.q_interval)))  # use the same q_interval to get the dimension
+        q_dim = int(np.floor(np.quantile(num_pkts, self.q_interval)))  # use the same q_interval to get the dimension
 
         if feat_type in ['IAT', 'FFT-IAT']:
-            self.dim = dim - 1
+            self.dim = q_dim - 1
             self.features, self.fids = _get_IAT(self.flows)
         elif feat_type in ['SIZE', 'FFT-SIZE']:
-            self.dim = dim
+            self.dim = q_dim
             self.features, self.fids = _get_SIZE(self.flows)
         elif feat_type in ['IAT_SIZE', 'FFT-IAT_SIZE']:
-            self.dim = 2 * dim - 1
+            self.dim = 2 * q_dim - 1
             self.features, self.fids = _get_IAT_SIZE(self.flows)
         elif feat_type in ['STATS']:
             self.dim = 12
             self.features, self.fids = _get_STATS(self.flows)
         elif feat_type in ['SAMP_NUM', 'FFT-SAMP_NUM']:
-            self.dim = dim - 1
+            self.dim = q_dim - 1
             flow_durations = [_get_flow_duration(pkts) for fid, pkts in self.flows]
             # To obtain different samp_features, you should change q_interval ((0, 1))
             sampling_rate = _get_split_interval(flow_durations, q_interval=0.3)
             self.features, self.fids = _get_SAMP_NUM(self.flows, sampling_rate)
         elif feat_type in ['SAMP_SIZE', 'FFT-SAMP_SIZE']:
-            self.dim = dim - 1  # here the dim of "SAMP_SIZE" is dim -1, which equals to the dimension of 'SAMP_NUM'
+            self.dim = q_dim - 1  # here the dim of "SAMP_SIZE" is dim -1, which equals to the dimension of 'SAMP_NUM'
             flow_durations = [_get_flow_duration(pkts) for fid, pkts in self.flows]
             sampling_rate = _get_split_interval(flow_durations, q_interval=0.3)
             self.features, self.fids = _get_SAMP_SIZE(self.flows, sampling_rate)
         else:
             msg = f'feat_type ({feat_type}) is not correct! '
             raise ValueError(msg)
+
+        if dim is not None:
+            if isinstance(dim, bool) or not isinstance(dim, (int, np.integer)) or dim < 1:
+                raise ValueError(f'dim ({dim!r}) must be a positive integer')
+            if feat_type == 'STATS' and dim != 12:
+                raise ValueError(f'STATS features are always 12 wide; got dim={dim}')
+            self.dim = int(dim)
 
         if fft:
             self.features = _get_FFT_data(self.features, fft_bin=self.dim)
@@ -840,7 +860,7 @@ class PCAP:
         if self.verbose > 5:
             print(np.all(self.features >= 0))
 
-    def flow2features(self, feat_type='IAT', *, fft=False, header=False):
+    def flow2features(self, feat_type='IAT', *, fft=False, header=False, dim=None):
         """Extract features from each flow according to feat_type, fft and header.
 
         Parameters
@@ -854,11 +874,24 @@ class PCAP:
         header: boolean (default is False)
             if we need header+features
 
+        dim: int or None (default is None)
+            the number of features per flow (before any header features). Each
+            flow's feature vector is cut off or zero-padded to this length.
+
+            If None, the length is derived from this capture's own flows: the
+            ``q_interval`` quantile of packets per flow (minus one for IAT-based
+            types; twice that, minus one, for IAT_SIZE). Two captures can then
+            produce different widths, so to combine or compare feature matrices
+            from several captures (e.g. train on one pcap, test on another), pass
+            the same ``dim`` to each, typically the ``dim`` of the first or
+            training capture (available afterwards as ``pcap.dim``). STATS
+            features are always 12 wide; any other ``dim`` is an error.
+
         Returns
         -------
             self
         """
-        _, tot_time = self._flow2features(feat_type, fft=fft, header=header)
+        _, tot_time = self._flow2features(feat_type, fft=fft, header=header, dim=dim)
         self.flow2features.__dict__['tot_time'] = tot_time
 
     @timing

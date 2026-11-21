@@ -65,16 +65,32 @@ def binary_input_file_type(value, allow_stdin=False):
 binary_input_file_type_stdin = functools.partial(binary_input_file_type, allow_stdin=True)
 
 
+def trained_feature_dim(model):
+    """Number of features the model was fit on, if it records it (else None)."""
+    for candidate in (model, getattr(model, 'model_', None), getattr(model, 'detector_', None)):
+        n = getattr(candidate, 'n_features_in_', None)
+        if n is not None:
+            return int(n)
+    return None
+
+
 # base command class
 
 class Command(argcmdr.Command):
 
-    def extract(self, pcap_file, label=None, label_file=None):
+    def extract(self, pcap_file, label=None, label_file=None, dim=None):
         """Parse PCAP file and extract its flows and features.
 
         Labels, for model-testing, are applied if specified.
 
+        `dim` fixes the number of features per flow; if None, it falls back to
+        --feature-dim, and failing that is derived from this pcap's own flows
+        (see `PCAP.flow2features`).
+
         """
+        if dim is None:
+            dim = self.args.feature_dim
+
         pcap = netml.pparser.parser.PCAP(
             pcap_file,
             flow_ptks_thres=self.args.flow_pkts_threshold,
@@ -91,7 +107,7 @@ class Command(argcmdr.Command):
 
         # extract features from each flow given feat_type
         # TODO: support specification of remaining feature types
-        pcap.flow2features('IAT', fft=False, header=False)
+        pcap.flow2features('IAT', fft=False, header=False, dim=dim)
 
         return pcap
 
@@ -133,6 +149,15 @@ class Main(argcmdr.RootCommand):
             default=0.9,
             help="quantile between [0, 1] by which flow duration interval is determined "
                  "(default: 0.9)",
+        )
+        parser.add_argument(
+            '--feature-dim',
+            metavar='INT',
+            type=int,
+            default=None,
+            help="number of features per flow; flows are cut off or zero-padded to this "
+                 "length (default: derived from the first pcap's flows at --q-interval, "
+                 "and applied to every other pcap; for classify, the trained model's)",
         )
         parser.add_argument(
             '--random-state',
@@ -194,10 +219,11 @@ class Classify(Command):
 
             pcap_file = sys.stdin.buffer
 
-        pcap = self.extract(pcap_file)
-
         # TODO: catch model file issues such as EOFError
         (model, train_history) = load_data(args.model)
+
+        # extract features at the width the model was trained on
+        pcap = self.extract(pcap_file, dim=trained_feature_dim(model))
 
         classifications = model.predict(pcap.features)
 
@@ -223,7 +249,7 @@ class Classify(Command):
                 packet_type = '[protocol-other]'
 
             (packet_datetime0, packet_datetime1) = packet_datetimes = [
-                datetime.datetime.fromtimestamp(packet.time)
+                datetime.datetime.fromtimestamp(float(packet.time))
                 for packet in (flow_packets[0], flow_packets[-1])
             ]
             packet_date = packet_datetime0.date()
@@ -454,24 +480,23 @@ class Learn(Command):
                 )
 
     def perform_extract(self, pcap_file_labels, feature_file):
-        pcaps = [
-            self.extract(pcap_file, **label_kwargs)
-            for (pcap_file, label_kwargs) in pcap_file_labels
-        ]
+        # every pcap must yield the same number of features per flow, so that their
+        # feature matrices can be combined: the first pcap sets the width (unless
+        # --feature-dim does) and the rest are cut off or zero-padded to it
+        pcaps = []
+        dim = None
+        for (pcap_file, label_kwargs) in pcap_file_labels:
+            pcap = self.extract(pcap_file, dim=dim, **label_kwargs)
+            dim = pcap.dim
+            pcaps.append(pcap)
 
         pcap_count = len(pcaps)
         if pcap_count == 1:
             (pcap,) = pcaps
             (features, labels) = (pcap.features, pcap.labels)
         elif pcap_count > 1:
-            # TODO: ensure that there is no normalization issue or other issue
-            # TODO: with simply concatenating features this way
-            #
-            # (If that is the case, can perhaps merge data prior to generating features.
-            # Iff concatenation is moved into PCAP class -- in an __add__ or otherwise --
-            # and merge must occur before feature generation, then some guards and/or
-            # refactoring might be necessary. Note that merge might make sense at packet
-            # level or with flows.)
+            # all pcaps were extracted at the same width (see above), so their
+            # feature matrices can be stacked row-wise
             features = np.concatenate([pcap.features for pcap in pcaps])
 
             if any(pcap.labels is None for pcap in pcaps):
