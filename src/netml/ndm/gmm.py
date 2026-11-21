@@ -71,6 +71,8 @@ class GMM(GaussianMixture, BaseDetector):
         contamination: float (default is 0.1)
              It's in range (0,1). A threshold used to decide the normal score (not used).
 
+        random_state: int (default is 42)
+
         """
         self.n_components = n_components
         self.covariance_type = covariance_type

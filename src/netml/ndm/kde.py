@@ -10,13 +10,14 @@ from pyod.utils import invert_order
 from sklearn.compose._column_transformer import _check_X
 from sklearn.neighbors import KernelDensity
 from sklearn.neighbors._kde import VALID_KERNELS
+from netml.utils.params import check_ignored_random_state
 
 
 class KDE(KernelDensity, BaseDetector):
 
     def __init__(self, bandwidth=1.0, algorithm='auto',
                  kernel='gaussian', metric="euclidean", atol=0, rtol=0, contamination=0.1,
-                 breadth_first=True, leaf_size=40, metric_params=None, random_state=42):
+                 breadth_first=True, leaf_size=40, metric_params=None, **kwargs):
         """Kernel density estimation (KDE)
         Parameters
         ----------
@@ -63,7 +64,8 @@ class KDE(KernelDensity, BaseDetector):
         self.leaf_size = leaf_size
         self.metric_params = metric_params
         self.contamination = contamination
-        self.random_state = random_state
+
+        check_ignored_random_state(kwargs, "KDE")
 
         # run the choose algorithm code so that exceptions will happen here
         # we're using clone() in the GenerativeBayes classifier,

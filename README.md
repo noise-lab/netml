@@ -235,9 +235,9 @@ RANDOM_STATE = 42
 ) = train_test_split(features, labels, test_size=0.33, random_state=RANDOM_STATE)
 
 # create detection model
-ocsvm = OCSVM(kernel='rbf', nu=0.5, random_state=RANDOM_STATE)
+ocsvm = OCSVM(kernel='rbf', nu=0.5)
 ocsvm.name = 'OCSVM'
-ndm = MODEL(ocsvm, score_metric='auc', verbose=10, random_state=RANDOM_STATE)
+ndm = MODEL(ocsvm, score_metric='auc', verbose=10)
 
 # train the model from the train set
 ndm.train(features_train)
