@@ -652,6 +652,13 @@ def _get_FFT_data(features, fft_bin='', fft_part='real'):
     return fft_features
 
 
+
+def _missing(x):
+    """True for None and for the NaN/NA that pandas >= 3 substitutes for None
+    in object columns (packets without an IP or MAC layer)."""
+    return x is None or (not isinstance(x, str) and pd.isna(x))
+
+
 class PCAP:
 
     def __init__(self, pcap_file, *, flow_ptks_thres=2, verbose=0, random_state=42):
@@ -1060,16 +1067,16 @@ class PCAP:
         self.df['datetime'] = pd.to_datetime(self.df['datetime'])
 
         self.df['ip_dst_int'] = self.df['ip_dst'].apply(
-            lambda x: None if x is None else int(ipaddress.ip_address(x)))
+            lambda x: None if _missing(x) else int(ipaddress.ip_address(x)))
 
         self.df['ip_src_int'] = self.df['ip_src'].apply(
-            lambda x: None if x is None else int(ipaddress.ip_address(x)))
+            lambda x: None if _missing(x) else int(ipaddress.ip_address(x)))
 
         self.df['mac_dst_int'] = self.df['mac_dst'].apply(
-            lambda x: None if x is None else int(netaddr.EUI(x)))
+            lambda x: None if _missing(x) else int(netaddr.EUI(x)))
 
         self.df['mac_src_int'] = self.df['mac_src'].apply(
-            lambda x: None if x is None else int(netaddr.EUI(x)))
+            lambda x: None if _missing(x) else int(netaddr.EUI(x)))
 
         self.df['time_normed'] = self.df['time'].apply(lambda x: x - self.df.iloc[0]['time'])
 
