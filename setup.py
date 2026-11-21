@@ -13,19 +13,19 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
-    'netaddr ~= 1.3.0',
-    'numpy ~= 2.0.1',
-    'pandas ~= 2.2.2',
-    'pyod ~= 2.0.1',
-    'scapy ~= 2.5.0',
-    'scikit-learn ~= 1.5.1',
+    'netaddr >= 1.3',
+    'numpy >= 2.0',
+    'pandas >= 2.2',
+    'pyod >= 2.0',
+    'scapy >= 2.5',
+    'scikit-learn >= 1.6.1',
 ]
 
 _CLI_REQUIRES = [
-    'argcmdr==0.13.1',
-    'argparse-formatter==1.4',
-    'PyYAML==6.0.1',
-    'terminaltables==3.1.10',
+    'argcmdr >= 0.13.1',
+    'argparse-formatter >= 1.4',
+    'PyYAML >= 6.0',
+    'terminaltables >= 3.1.10',
 ]
 
 _TESTS_REQUIRE = [
